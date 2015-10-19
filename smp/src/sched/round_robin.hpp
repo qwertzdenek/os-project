@@ -1,6 +1,0 @@
-#ifndef LIBSCHED_ROUND_ROBIN_HPP
-#define LIBSCHED_ROUND_ROBIN_HPP
-
-
-#endif
-
