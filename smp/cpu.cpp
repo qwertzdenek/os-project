@@ -2,22 +2,28 @@
 #include "cpu.h"
 
 #include <thread>
+#include <iostream>
 
 namespace SMP {
 	CPU::CPU()
 	{
-		core_count = std::thread::hardware_concurrency();
+		int count = std::thread::hardware_concurrency();
+
+		for (int i = 0; i < count; i++)
+		{
+			cores.push_back(Core(i));
+			std::cout << "ID: " << cores[i].getCPUId() << std::endl;
+		}
 	}
 	CPU::~CPU()
 	{
 	}
 	int CPU::count()
 	{
-		return core_count;
+		return cores.size();
 	}
-	int CPU::reschedule(TThreadControlBlock *thread, int core)
+	void CPU::reschedule(CONTEXT *task, int core)
 	{
-		cores[core].reschedule(thread);
-		return ERROR_SUCCESS;
+		cores[core].reschedule(task);
 	}
 };

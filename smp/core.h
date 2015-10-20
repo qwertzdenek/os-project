@@ -12,14 +12,20 @@ namespace SMP
 		HANDLE QuitFlag;
 
 		CONTEXT DefaultContext;
+		CONTEXT *ContextToSwitch;
+		CONTEXT *LastContext;
 
-		TThreadControlBlock *threadToSwitch;
-
-		DWORD WINAPI ClockThread(void* param);
+		static DWORD WINAPI Core::CPUCoreThread(void * param);
+		static DWORD WINAPI ClockThreadStart(void* Param);
+		DWORD ClockThread();
 	public:
 		Core();
+		Core(int affinity);
 		~Core();
+		Core(const Core& c);
 
-		int reschedule(TThreadControlBlock *thread);
+		void reschedule(CONTEXT *task);
+		void shutdown();
+		DWORD getCPUId();
 	};
 };

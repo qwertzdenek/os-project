@@ -1,5 +1,7 @@
 #pragma once
 
+#include <vector>
+
 #include "core.h"
 
 namespace SMP {
@@ -10,9 +12,8 @@ namespace SMP {
 		~CPU();
 
 		int count();
-		int reschedule(TThreadControlBlock *thread, int core);
+		void reschedule(CONTEXT *task, int core);
 	private:
-		Core *cores;
-		unsigned int core_count;
+		std::vector<Core> cores;
 	};
 };
