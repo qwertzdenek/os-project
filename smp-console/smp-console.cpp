@@ -2,10 +2,17 @@
 //
 
 #include "stdafx.h"
+#include "cpu.h"
 
+#include <iostream>
+
+using namespace SMP;
 
 int main()
 {
-    return 0;
-}
+	CPU cpu;
 
+	std::cout << "Thread count: " << cpu.count() << std::endl;
+
+	return 0;
+}
