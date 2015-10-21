@@ -45,6 +45,8 @@ namespace SMP
 	}
 	Core::Core(int affinity)
 	{
+		number = affinity;
+
 		memset(&DefaultContext, 0, sizeof(DefaultContext));
 		CPUCore = (HANDLE)CreateThread(NULL, 0, &CPUCoreThread, 0, CREATE_SUSPENDED, NULL);
 
@@ -63,6 +65,14 @@ namespace SMP
 	}
 	Core::~Core()
 	{
+		SetEvent(QuitFlag);
+		HANDLE threads[2] = { Clock, CPUCore };
+
+		ResumeThread(CPUCore);
+
+		WaitForMultipleObjects(2, threads, true, INFINITE);
+
+		CloseHandle(QuitFlag);
 	}
 	Core::Core(const Core & c) :
 		CPUCore(c.CPUCore),
@@ -76,17 +86,6 @@ namespace SMP
 	void Core::reschedule(CONTEXT *task)
 	{
 		ContextToSwitch = task;
-	}
-	void Core::shutdown()
-	{
-		SetEvent(QuitFlag);
-		HANDLE threads[2] = { Clock, CPUCore };
-
-		ResumeThread(CPUCore);
-
-		WaitForMultipleObjects(2, threads, true, INFINITE);
-
-		CloseHandle(QuitFlag);
 	}
 	DWORD Core::getCPUId()
 	{

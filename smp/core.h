@@ -15,6 +15,8 @@ namespace SMP
 		CONTEXT *ContextToSwitch;
 		CONTEXT *LastContext;
 
+		int number;
+
 		static DWORD WINAPI Core::CPUCoreThread(void * param);
 		static DWORD WINAPI ClockThreadStart(void* Param);
 		DWORD ClockThread();
@@ -25,7 +27,6 @@ namespace SMP
 		Core(const Core& c);
 
 		void reschedule(CONTEXT *task);
-		void shutdown();
 		DWORD getCPUId();
 	};
 };

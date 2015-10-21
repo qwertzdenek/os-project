@@ -2,7 +2,6 @@
 #include "cpu.h"
 
 #include <thread>
-#include <iostream>
 
 namespace SMP {
 	CPU::CPU()
@@ -11,8 +10,8 @@ namespace SMP {
 
 		for (int i = 0; i < count; i++)
 		{
-			cores.push_back(Core(i));
-			std::cout << "ID: " << cores[i].getCPUId() << std::endl;
+			std::shared_ptr<Core> core(new Core(i));
+			cores.push_back(core);
 		}
 	}
 	CPU::~CPU()
@@ -24,6 +23,6 @@ namespace SMP {
 	}
 	void CPU::reschedule(CONTEXT *task, int core)
 	{
-		cores[core].reschedule(task);
+		cores[core]->reschedule(task);
 	}
 };

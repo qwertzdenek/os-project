@@ -1,6 +1,7 @@
 #pragma once
 
 #include <vector>
+#include <memory>
 
 #include "core.h"
 
@@ -14,6 +15,6 @@ namespace SMP {
 		int count();
 		void reschedule(CONTEXT *task, int core);
 	private:
-		std::vector<Core> cores;
+		std::vector<std::shared_ptr<Core>> cores;
 	};
 };
