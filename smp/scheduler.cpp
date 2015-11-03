@@ -1,6 +1,5 @@
-#include "stdafx.h";
-
-#include "scheduler.h";
+#include "stdafx.h"
+#include "scheduler.h"
 
 namespace SMP {
 

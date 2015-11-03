@@ -1,7 +1,5 @@
 #pragma once
 
-#include "stdafx.h"
-
 #define ThreadTimeQuantum 52
 
 typedef enum test {
