@@ -18,7 +18,7 @@ namespace SMP
 	{
 		bool doQuit;
 		do {
-			doQuit = WaitForSingleObject(QuitFlag, ThreadTimeQuantum) == WAIT_OBJECT_0;
+			doQuit = WaitForSingleObject(QuitFlag, CoreTimeQuantum) == WAIT_OBJECT_0;
 			SuspendThread(CPUCore);
 
 			if (!doQuit && ContextToSwitch != NULL) {

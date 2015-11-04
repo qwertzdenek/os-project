@@ -146,11 +146,21 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="smp-console.cpp" />
+    <ClCompile Include="task.cpp" />
+    <ClCompile Include="task_init.cpp" />
+    <ClCompile Include="task_sched.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\smp\smp.vcxproj">
       <Project>{4f1e83f9-b5fc-41a5-998f-48fc9d0bd25a}</Project>
     </ProjectReference>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="sched.h" />
+    <ClInclude Include="sched_calls.h" />
+    <ClInclude Include="task.h" />
+    <ClInclude Include="task_init.h" />
+    <ClInclude Include="task_sched.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
