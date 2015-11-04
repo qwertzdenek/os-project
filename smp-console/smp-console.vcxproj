@@ -147,7 +147,9 @@
   <ItemGroup>
     <ClCompile Include="smp-console.cpp" />
     <ClCompile Include="task.cpp" />
+    <ClCompile Include="task_consument.cpp" />
     <ClCompile Include="task_init.cpp" />
+    <ClCompile Include="task_producent.cpp" />
     <ClCompile Include="task_sched.cpp" />
   </ItemGroup>
   <ItemGroup>
@@ -159,7 +161,9 @@
     <ClInclude Include="sched.h" />
     <ClInclude Include="sched_calls.h" />
     <ClInclude Include="task.h" />
+    <ClInclude Include="task_consument.h" />
     <ClInclude Include="task_init.h" />
+    <ClInclude Include="task_producent.h" />
     <ClInclude Include="task_sched.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

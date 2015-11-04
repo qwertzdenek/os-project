@@ -2,6 +2,6 @@
 
 #include "task.h"
 
-class Init : public Task {
+class Producent : public Task {
 	int main(std::vector<std::string> arg) override;
 };

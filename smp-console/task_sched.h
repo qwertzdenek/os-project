@@ -4,7 +4,7 @@
 
 #define ThreadStackSize 1024*1024
 
-class Scheduler : Task {
+class Scheduler : public Task {
 private:
 	static const int NUMBER_OF_TICKS_TO_RESCHEDULE = 100;
 	std::queue<Task> processQueue;
@@ -12,7 +12,7 @@ private:
 
 	CONTEXT default_context;
 
-	bool create_task(std::string name);
+	bool create_task(std::vector<std::string> arg);
 
 public:
 	Scheduler();

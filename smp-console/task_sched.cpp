@@ -1,6 +1,9 @@
-#include "task_init.h"
-#include "sched_calls.h"
 #include "task_sched.h"
+#include "sched_calls.h"
+
+#include "task_init.h"
+#include "task_producent.h"
+#include "task_consument.h"
 
 unsigned WINAPI core_thread(void* param) {
 	_endthreadex(0);
@@ -51,10 +54,21 @@ Scheduler::~Scheduler()
 	// TODO: clean all
 }
 
-bool Scheduler::create_task(std::string name)
+bool Scheduler::create_task(std::vector<std::string> arg)
 {
 	TTaskControlBlock tcb;
 	Task task;
+
+	std::string name = arg.at(0);
+
+	// TODO: pass arguments... don't know how
+	if (name.compare("init")) {
+		task = Init();
+	} else if (name.compare("producent")) {
+		task = Producent();
+	} else if (name.compare("consument")) {
+		task = Consument();
+	}
 
 	// TODO: create Task instance using name
 

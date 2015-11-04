@@ -22,31 +22,32 @@ typedef struct {
 	ETaskState state;
 } TTaskControlBlock;
 
-struct start_param {
-	void *task_class;
-	void *data;
-};
 
 class Task {
 private:
-	start_param param;
+	std::vector<std::string> arg;
+
 public:
-	Task()
-	{
-		param.data = NULL;
-		param.task_class = this;
-	}
+	Task() {}
 
 	explicit
 	Task(std::vector<std::string> arg)
 	{
-		param.data = new std::vector<std::string>(arg);
-		param.task_class = this;
+		this->arg.insert(this->arg.end(), arg.begin(), arg.end());
 	}
 
-	~Task()
+	Task(const Task &o)
 	{
-		delete param.data;
+		arg.clear();
+		arg.insert(arg.end(), o.arg.begin(), o.arg.end());
+	}
+
+	Task(Task&& o) noexcept : arg(std::move(arg)) {}
+
+	Task& operator=(Task&& o)
+	{
+		arg = std::move(o.arg);
+		return *this;
 	}
 
 	// task entry point
