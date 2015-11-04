@@ -2,14 +2,15 @@
 
 #define ThreadTimeQuantum 52
 
-typedef enum test {
-	RUNNING, READY, BLOCKED, TERMINATED
-} EThreadState;
+typedef enum {
+	NEW, RUNNABLE, BLOCKED, RUNNING, TERMINATED
+} ETaskState;
 
 typedef struct {
 	CONTEXT OSContext;
 	HANDLE StackHandle;
 	void* Stack;
-	int Id;
-	EThreadState state;
-} TThreadControlBlock;
+	int id;
+	time_t started;
+	ETaskState state;
+} TTaskControlBlock;
