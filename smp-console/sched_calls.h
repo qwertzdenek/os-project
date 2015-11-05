@@ -4,8 +4,10 @@
 
 #include "sched.h"
 
-// it will create NEW TTaskControlBlock
-extern void exec_task(std::vector<std::string> arg);
+// it will add this task to the exec list
+// this memory shoud be copied to the scheduler scope
+// argv: NULL terminated list
+extern void exec_task(std::string name, std::string *argv[]);
 
 // accuire semaphore and return his value
 extern int semaphore_P(semaphore_t &s);

@@ -1,8 +1,7 @@
 #include "stdafx.h"
 #include "task_consument.h"
 
-int Consument::main(std::vector<std::string> arg)
+int Consument::main(int argc, std::string * argv[])
 {
-	// TODO
 	return 0;
 }

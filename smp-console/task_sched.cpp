@@ -10,7 +10,8 @@ unsigned WINAPI core_thread(void* param) {
 	return 0;
 }
 
-void exec_task(std::vector<std::string> arg)
+// argv will be NULL terminated list
+void exec_task(std::string name, std::string *argv[])
 {
 	// TODO
 }
@@ -54,12 +55,16 @@ Scheduler::~Scheduler()
 	// TODO: clean all
 }
 
-bool Scheduler::create_task(std::vector<std::string> arg)
+int Scheduler::main(int argc, std::string * argv[])
+{
+	// TODO
+	return 0;
+}
+
+bool Scheduler::create_task(std::string name, std::string *argv[])
 {
 	TTaskControlBlock tcb;
 	Task task;
-
-	std::string name = arg.at(0);
 
 	// TODO: pass arguments... don't know how
 	if (name.compare("init")) {
@@ -101,11 +106,4 @@ bool Scheduler::create_task(std::vector<std::string> arg)
 	#endif
 
 	return false;
-}
-
-int Scheduler::main(std::vector<std::string> arg)
-{
-	// TODO
-
-	return 0;
 }

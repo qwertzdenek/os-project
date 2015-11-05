@@ -1,11 +1,10 @@
 #pragma once
 
-#include <vector>
 #include <mutex>
-#include <queue>
+#include <deque>
 
 typedef struct {
 	int _semaphore_value;
-	std::vector<void *> waiting;
-	std::mutex waiting_lock;
+	std::deque<int> _waiting;
+	std::mutex _waiting_lock;
 } semaphore_t;

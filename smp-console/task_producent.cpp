@@ -1,8 +1,7 @@
 #include "stdafx.h"
 #include "task_producent.h"
 
-int Producent::main(std::vector<std::string> arg)
+int Producent::main(int argc, std::string * argv[])
 {
-	// TODO
 	return 0;
 }

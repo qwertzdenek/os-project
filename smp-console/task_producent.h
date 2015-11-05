@@ -3,5 +3,5 @@
 #include "task.h"
 
 class Producent : public Task {
-	int main(std::vector<std::string> arg) override;
+	int main(int argc, std::string * argv[]) override;
 };

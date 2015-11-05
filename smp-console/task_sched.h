@@ -1,5 +1,7 @@
 #pragma once
 
+#include <queue>
+
 #include "task.h"
 
 #define ThreadStackSize 1024*1024
@@ -12,11 +14,11 @@ private:
 
 	CONTEXT default_context;
 
-	bool create_task(std::vector<std::string> arg);
+	bool create_task(std::string name, std::string *arg[]);
 
 public:
 	Scheduler();
 	~Scheduler();
 
-	int main(std::vector<std::string> arg) override;
+	int main(int argc, std::string * argv[]) override;
 };
