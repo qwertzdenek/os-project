@@ -25,4 +25,10 @@ namespace SMP {
 	{
 		cores[core]->reschedule(task);
 	}
+	/*
+	void CPU::set_scheduler_entry(int(*p)(void *))
+	{
+		// TODO: assign 
+	}
+	*/
 };

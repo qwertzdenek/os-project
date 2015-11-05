@@ -18,5 +18,43 @@
     <ClCompile Include="smp-console.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="task_init.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="task_sched.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="task.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="task_consument.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="task_producent.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="task.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="sched.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="sched_calls.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="task_init.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="task_sched.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="task_producent.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="task_consument.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

@@ -2,17 +2,18 @@
 //
 
 #include "stdafx.h"
-#include "cpu.h"
-
 #include <iostream>
+
+#include "cpu.h"
+#include "task_sched.h"
 
 using namespace SMP;
 
 int main()
 {
 	CPU cpu;
+	Scheduler s;
 
-	std::cout << "Thread count: " << cpu.count() << std::endl;
-
+	// cpu.set_scheduler_entry(s.start);
 	return 0;
 }
