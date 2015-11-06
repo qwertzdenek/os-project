@@ -1,94 +1,25 @@
-#include "stdafx.h"
+#include "Windows.h"
+
 #include "core.h"
 
-namespace SMP
+HANDLE core_handle[CORE_COUNT];
+
+DWORD WINAPI init_cpu_idle_task()
 {
-	DWORD WINAPI Core::CPUCoreThread(void * param)
-	{
-		return ERROR_SUCCESS;
-	}
+	while (true)
+		;
 
-	DWORD WINAPI Core::ClockThreadStart(void * Param)
-	{
-		Core* This = (Core*)Param;
-		return This->ClockThread();
-	}
+	return 0;
+}
 
-	DWORD Core::ClockThread()
-	{
-		bool doQuit;
-		do {
-			doQuit = WaitForSingleObject(QuitFlag, CoreTimeQuantum) == WAIT_OBJECT_0;
-			SuspendThread(CPUCore);
+void init_cpu_core(int core_number)
+{
+	core_handle[core_number] = (HANDLE)CreateThread(NULL, 0, &init_cpu_idle_task, 0, 0, NULL);
+	SetThreadAffinityMask(core_handle[core_number], 0x1 << core_number);
+}
 
-			if (!doQuit && ContextToSwitch != NULL) {
-				CONTEXT ActualContextState;
-				memset(&ActualContextState, 0, sizeof(ActualContextState));
-				GetThreadContext(CPUCore, &ActualContextState);
-
-				// store actual state
-				memcpy(LastContext, &ActualContextState, sizeof(CONTEXT));
-
-				SetThreadContext(CPUCore, ContextToSwitch);
-				LastContext = ContextToSwitch;
-				ContextToSwitch = NULL;
-			}
-
-			ResumeThread(CPUCore);
-		} while (!doQuit);
-
-		return ERROR_SUCCESS;
-	}
-	Core::Core()
-	{
-		Core(0);
-	}
-	Core::Core(int affinity)
-	{
-		number = affinity;
-
-		memset(&DefaultContext, 0, sizeof(DefaultContext));
-		CPUCore = (HANDLE)CreateThread(NULL, 0, &CPUCoreThread, 0, CREATE_SUSPENDED, NULL);
-
-		SetThreadAffinityMask(CPUCore, 0x1 << affinity);
-
-		DefaultContext.ContextFlags = CONTEXT_ALL;
-		GetThreadContext(CPUCore, &DefaultContext);
-
-		// init state pointers
-		LastContext = &DefaultContext;
-		ContextToSwitch = NULL;
-
-		QuitFlag = CreateEvent(NULL, TRUE, FALSE, NULL);
-
-		Clock = (HANDLE) CreateThread(NULL, 0, &ClockThreadStart, (void*) this, 0, NULL);
-	}
-	Core::~Core()
-	{
-		SetEvent(QuitFlag);
-		HANDLE threads[2] = { Clock, CPUCore };
-
-		ResumeThread(CPUCore);
-
-		WaitForMultipleObjects(2, threads, true, INFINITE);
-
-		CloseHandle(QuitFlag);
-	}
-	Core::Core(const Core & c) :
-		CPUCore(c.CPUCore),
-		Clock(c.Clock),
-		QuitFlag(c.QuitFlag),
-		DefaultContext(c.DefaultContext),
-		ContextToSwitch(c.ContextToSwitch),
-		LastContext(c.LastContext)
-	{
-	}
-	void Core::reschedule(CONTEXT *task)
-	{
-		ContextToSwitch = task;
-	}
-	DWORD Core::getCPUId()
-	{
-		return GetThreadId(CPUCore);
-	}
-};
+void deinit_cpu_core()
+{
+	// TODO: it will be called as interrupt
+	ExitThread(0);
+}
