@@ -1,3 +1,4 @@
+#include "stdafx.h"
 #include "task_init.h"
 #include "sched_calls.h"
 

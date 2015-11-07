@@ -9,6 +9,9 @@
 // argv: NULL terminated list
 extern void exec_task(std::string name, std::string *argv[]);
 
+// returns task id of finished task and fill it's status code.
+extern int wait_task(int *status_code);
+
 // accuire semaphore and return his value
 extern int semaphore_P(semaphore_t &s);
 

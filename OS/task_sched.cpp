@@ -1,5 +1,8 @@
+#include "stdafx.h"
 #include "task_sched.h"
 #include "sched_calls.h"
+
+#include "common.h"
 
 #include "task_init.h"
 #include "task_producent.h"
@@ -63,7 +66,7 @@ int Scheduler::main(int argc, std::string * argv[])
 
 bool Scheduler::create_task(std::string name, std::string *argv[])
 {
-	TTaskControlBlock tcb;
+	task_control_block tcb;
 	Task task;
 
 	// TODO: pass arguments... don't know how

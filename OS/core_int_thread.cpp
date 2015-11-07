@@ -1,5 +1,5 @@
-#include <Windows.h>
-
+#include "stdafx.h"
+#include "common.h"
 #include "core.h"
 #include "core_int_thread.h"
 
@@ -7,6 +7,11 @@ HANDLE scheduler_interrupt_handle[CORE_COUNT];
 HANDLE start_interrupt_handle[CORE_COUNT];
 HANDLE stop_interrupt_handle[CORE_COUNT];
 
+HANDLE core_tick[CORE_COUNT];
+
+task_control_block core_tasks[CORE_COUNT];
+
+// TODO: find universal alternative (works only on x86)
 __declspec(naked) void scheduler_interrupt()
 {
 	__asm
@@ -16,15 +21,11 @@ __declspec(naked) void scheduler_interrupt()
 
 		// push all registers  
 		pushad
-
-		// TODO: get actual TCB and store stack here
-		// push stack ptr to running thread
-		mov edx, wcs_running_thread_tcb
-		mov[edx + WCS_THREAD_TCB_STACK_PTR_OFFSET], esp
 	}
 
 	// reschedule 
-	reschedule();
+	// TODO: run scheduler
+	//reschedule();
 }
 
 void core_do_interrupt(int core_number)
@@ -42,12 +43,16 @@ void core_do_interrupt(int core_number)
 	// set interrupt handler on the cpu core
 	#ifdef _M_X64
 		ctx.Rsp -= sizeof(DWORD64);
-		ctx.Rsp = (DWORD64) ctx.Eip;
+		ctx.Rsp = (DWORD64) ctx.Rip;
+
+		core_tasks[core_number].stack = (void *)ctx.Rsp;
 
 		ctx.Rip = (DWORD64) scheduler_interrupt;
 	#else
 		ctx.Esp -= sizeof(DWORD32);
 		ctx.Esp = (DWORD32) ctx.Eip;
+
+		core_tasks[core_number].stack = (void *) ctx.Esp;
 
 		ctx.Eip = (DWORD32)scheduler_interrupt;
 	#endif
@@ -56,13 +61,14 @@ void core_do_interrupt(int core_number)
 	ResumeThread(target_core);
 }
 
-void core_handle_int(int core_number)
+void core_int_handle(int core_number)
 {
 	core_do_interrupt(core_number);
 }
 
-void core_int_thread_entry(int core_number)
+DWORD WINAPI core_int_thread_entry(void *param)
 {
+	int core_number = *(int *) param;
 	bool running = true;
 
 	HANDLE interrupts[] = { scheduler_interrupt_handle[core_number], stop_interrupt_handle[core_number] };
@@ -72,14 +78,25 @@ void core_int_thread_entry(int core_number)
 		switch (msg)
 		{
 		case 0:
-			core_handle_int(core_number);
+			core_int_handle(core_number);
+			ResetEvent(scheduler_interrupt_handle[core_number]);
 			break;
 		case 1:
-			
+			// TODO: stop core thread
+			ResetEvent(stop_interrupt_handle[core_number]);
 			break;
 		default:
 			break;
 		}
 	}
+	return 0;
 }
 
+void core_int_init(int core_number)
+{
+	scheduler_interrupt_handle[core_number] = CreateEvent(NULL, TRUE, FALSE, NULL);
+	start_interrupt_handle[core_number] = CreateEvent(NULL, TRUE, FALSE, NULL);
+	stop_interrupt_handle[core_number] = CreateEvent(NULL, TRUE, FALSE, NULL);
+
+	CreateThread(NULL, 0, core_int_thread_entry, &core_number, 0, NULL);
+}

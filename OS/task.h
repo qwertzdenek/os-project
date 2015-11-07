@@ -6,21 +6,8 @@
 #include <process.h>
 #include <Windows.h>
 
+#include "common.h"
 #include "sched_calls.h"
-
-typedef enum {
-	NEW, RUNNABLE, BLOCKED, RUNNING, TERMINATED
-} ETaskState;
-
-typedef struct {
-	CONTEXT context;
-	HANDLE stack_handle;
-	void* stack;
-	int task_id;
-	time_t started;
-	ETaskState state;
-} TTaskControlBlock;
-
 
 class Task {
 private:
