@@ -4,13 +4,13 @@
 #include "core_int_thread.h"
 #include "smp.h"
 
-HANDLE scheduler_interrupt_handle[SMP::numberOfcores];
-HANDLE start_interrupt_handle[SMP::numberOfcores];
-HANDLE stop_interrupt_handle[SMP::numberOfcores];
+HANDLE scheduler_interrupt_handle[SMP::NUMBER_OF_CORES];
+HANDLE start_interrupt_handle[SMP::NUMBER_OF_CORES];
+HANDLE stop_interrupt_handle[SMP::NUMBER_OF_CORES];
 
-HANDLE core_tick[SMP::numberOfcores];
+HANDLE core_tick[SMP::NUMBER_OF_CORES];
 
-task_control_block core_tasks[SMP::numberOfcores];
+task_control_block core_tasks[SMP::NUMBER_OF_CORES];
 
 // TODO: find universal alternative (works only on x86)
 __declspec(naked) void scheduler_interrupt()

@@ -3,7 +3,7 @@
 class SMP
 {
 public:
-	static const int numberOfcores = 4;
+	static const int NUMBER_OF_CORES = 4;
 	SMP();
 	~SMP();
 	void start();

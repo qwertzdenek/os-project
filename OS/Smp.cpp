@@ -24,7 +24,7 @@ void SMP::initTCB()
 
 void SMP::initCores()
 {
-	for (int i = 1; i < numberOfcores; i++) {
+	for (int i = 1; i < NUMBER_OF_CORES; i++) {
 		init_cpu_core(i);
 	}
 }
