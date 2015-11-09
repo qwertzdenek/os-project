@@ -1,8 +1,7 @@
+#include "stdafx.h"
 
 #include "smp.h"
 #include "core.h"
-
-const int SMP::numberOfcores = 4;
 
 SMP::SMP()
 {

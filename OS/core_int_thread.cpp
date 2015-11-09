@@ -2,14 +2,15 @@
 #include "common.h"
 #include "core.h"
 #include "core_int_thread.h"
+#include "smp.h"
 
-HANDLE scheduler_interrupt_handle[CORE_COUNT];
-HANDLE start_interrupt_handle[CORE_COUNT];
-HANDLE stop_interrupt_handle[CORE_COUNT];
+HANDLE scheduler_interrupt_handle[SMP::numberOfcores];
+HANDLE start_interrupt_handle[SMP::numberOfcores];
+HANDLE stop_interrupt_handle[SMP::numberOfcores];
 
-HANDLE core_tick[CORE_COUNT];
+HANDLE core_tick[SMP::numberOfcores];
 
-task_control_block core_tasks[CORE_COUNT];
+task_control_block core_tasks[SMP::numberOfcores];
 
 // TODO: find universal alternative (works only on x86)
 __declspec(naked) void scheduler_interrupt()
