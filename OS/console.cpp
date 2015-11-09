@@ -11,6 +11,13 @@
 #include "sched_int_tick.h"
 #include "task_sched.h"
 
+////////////////////////////////////////////////////////////////////////////////////////////////////
+/// <summary>	Prints the help. </summary>
+///
+/// <remarks>	David 000, 08.11.2015. </remarks>
+///
+/// <returns>	A std::string. </returns>
+////////////////////////////////////////////////////////////////////////////////////////////////////
 std::string help()
 {
 	return
@@ -23,7 +30,17 @@ std::string help()
 		"  -h  show this message\n";
 }
 
-
+////////////////////////////////////////////////////////////////////////////////////////////////////
+/// <summary>	Main entry-point for this application. </summary>
+///
+/// <remarks>	David 000, 08.11.2015. </remarks>
+///
+/// <param name="argc">	Number of command-line arguments. </param>
+/// <param name="argv">	Array of command-line argument strings. </param>
+/// <param name="envp">	Array of command-line argument strings. </param>
+///
+/// <returns>	Exit-code for the process - 0 for success, else an error code. </returns>
+////////////////////////////////////////////////////////////////////////////////////////////////////
 int main(int argc, char *argv[], char *envp[])
 {
 	bool help_flag = false;
