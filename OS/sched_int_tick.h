@@ -1,3 +1,3 @@
 #pragma once
 
-HANDLE sched_tick_int_init();
+HANDLE sched_int_tick_init();

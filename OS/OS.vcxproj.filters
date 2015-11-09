@@ -54,6 +54,15 @@
     <ClInclude Include="task_sched.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="cpu.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="interrupts.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="isr_wrapper.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="stdafx.cpp">
@@ -86,5 +95,16 @@
     <ClCompile Include="task_sched.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="cpu.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="interrupts.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <MASM Include="isr_wrapper.asm">
+      <Filter>Source Files</Filter>
+    </MASM>
   </ItemGroup>
 </Project>

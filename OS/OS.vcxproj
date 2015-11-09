@@ -53,6 +53,7 @@
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
   <ImportGroup Label="ExtensionSettings">
+    <Import Project="$(VCTargetsPath)\BuildCustomizations\masm.props" />
   </ImportGroup>
   <ImportGroup Label="Shared">
   </ImportGroup>
@@ -141,6 +142,9 @@
     <ClInclude Include="common.h" />
     <ClInclude Include="core.h" />
     <ClInclude Include="core_int_thread.h" />
+    <ClInclude Include="cpu.h" />
+    <ClInclude Include="interrupts.h" />
+    <ClInclude Include="isr_wrapper.h" />
     <ClInclude Include="sched.h" />
     <ClInclude Include="sched_calls.h" />
     <ClInclude Include="sched_int_tick.h" />
@@ -156,6 +160,8 @@
     <ClCompile Include="console.cpp" />
     <ClCompile Include="core.cpp" />
     <ClCompile Include="core_int_thread.cpp" />
+    <ClCompile Include="cpu.cpp" />
+    <ClCompile Include="interrupts.cpp" />
     <ClCompile Include="sched_int_tick.cpp" />
     <ClCompile Include="stdafx.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Create</PrecompiledHeader>
@@ -169,7 +175,13 @@
     <ClCompile Include="task_producent.cpp" />
     <ClCompile Include="task_sched.cpp" />
   </ItemGroup>
+  <ItemGroup>
+    <MASM Include="isr_wrapper.asm">
+      <FileType>Document</FileType>
+    </MASM>
+  </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
+    <Import Project="$(VCTargetsPath)\BuildCustomizations\masm.targets" />
   </ImportGroup>
 </Project>

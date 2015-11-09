@@ -1,6 +1,6 @@
 #pragma once
 
-#define CORE_COUNT 4
+#include "cpu.h"
 
 extern HANDLE core_handle[];
 

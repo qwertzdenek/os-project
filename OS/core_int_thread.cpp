@@ -3,32 +3,16 @@
 #include "core.h"
 #include "core_int_thread.h"
 
-HANDLE scheduler_interrupt_handle[CORE_COUNT];
-HANDLE start_interrupt_handle[CORE_COUNT];
-HANDLE stop_interrupt_handle[CORE_COUNT];
+#include "interrupts.h"
 
 HANDLE core_tick[CORE_COUNT];
 
-task_control_block core_tasks[CORE_COUNT];
+CPU_INT interrupt_table[CORE_COUNT][INTERRUPT_COUNT];
 
-// TODO: find universal alternative (works only on x86)
-__declspec(naked) void scheduler_interrupt()
-{
-	__asm
-	{
-		// push status word 
-		pushfd
+// actual tasks on cpu
+task_control_block *core_tasks[CORE_COUNT];
 
-		// push all registers  
-		pushad
-	}
-
-	// reschedule 
-	// TODO: run scheduler
-	//reschedule();
-}
-
-void core_do_interrupt(int core_number)
+void core_do_interrupt(void *entry_point, int core_number)
 {
 	CONTEXT ctx;
 	memset(&ctx, 0, sizeof(ctx));
@@ -38,52 +22,51 @@ void core_do_interrupt(int core_number)
 
 	SuspendThread(target_core);
 	GetThreadContext(target_core, &ctx);
-
+	
 	// push return address on task stack
 	// set interrupt handler on the cpu core
 	#ifdef _M_X64
 		ctx.Rsp -= sizeof(DWORD64);
 		ctx.Rsp = (DWORD64) ctx.Rip;
 
-		core_tasks[core_number].stack = (void *)ctx.Rsp;
+		core_tasks[core_number]->stack = (void *)ctx.Rsp;
 
-		ctx.Rip = (DWORD64) scheduler_interrupt;
+		ctx.Rip = (DWORD64) entry_point;
 	#else
 		ctx.Esp -= sizeof(DWORD32);
 		ctx.Esp = (DWORD32) ctx.Eip;
 
-		core_tasks[core_number].stack = (void *) ctx.Esp;
+		core_tasks[core_number]->stack = (void *) ctx.Esp;
 
-		ctx.Eip = (DWORD32)scheduler_interrupt;
+		ctx.Eip = (DWORD32) entry_point;
 	#endif
 
 	SetThreadContext(target_core, &ctx);
 	ResumeThread(target_core);
 }
 
-void core_int_handle(int core_number)
-{
-	core_do_interrupt(core_number);
-}
-
 DWORD WINAPI core_int_thread_entry(void *param)
 {
 	int core_number = *(int *) param;
 	bool running = true;
+	int msg = 0;
 
-	HANDLE interrupts[] = { scheduler_interrupt_handle[core_number], stop_interrupt_handle[core_number] };
+	// TODO: pøizpùsobit na interrupt_table[core][1]
+	// zjistit èíslo vyjímky
+
 	while (running) {
-		int msg = WaitForMultipleObjects(2, interrupts, false, INFINITE) == WAIT_OBJECT_0;
+//		int msg = WaitForMultipleObjects(interrupt_table_count[core_number],
+//			interrupt_table[core_number], false, INFINITE) == WAIT_OBJECT_0;
 
 		switch (msg)
 		{
 		case 0:
-			core_int_handle(core_number);
-			ResetEvent(scheduler_interrupt_handle[core_number]);
-			break;
-		case 1:
 			// TODO: stop core thread
-			ResetEvent(stop_interrupt_handle[core_number]);
+			//ResetEvent(stop_interrupt_handle[core_number]);
+			break;
+		case 5:
+			core_do_interrupt(do_schedule, core_number);
+			//ResetEvent(scheduler_interrupt_handle);
 			break;
 		default:
 			break;
@@ -92,11 +75,31 @@ DWORD WINAPI core_int_thread_entry(void *param)
 	return 0;
 }
 
-void core_int_init(int core_number)
+void core_int_init()
 {
-	scheduler_interrupt_handle[core_number] = CreateEvent(NULL, TRUE, FALSE, NULL);
-	start_interrupt_handle[core_number] = CreateEvent(NULL, TRUE, FALSE, NULL);
-	stop_interrupt_handle[core_number] = CreateEvent(NULL, TRUE, FALSE, NULL);
+	// scheduler interrupt timer
+	interrupt_table[0][0].handler = CreateEvent(NULL, TRUE, FALSE, NULL);
+	interrupt_table[0][0].is_masked = false;
+	interrupt_table[0][0].routine = do_schedule;
 
-	CreateThread(NULL, 0, core_int_thread_entry, &core_number, 0, NULL);
+	for (int core = 1; core < CORE_COUNT; core++)
+	{
+		// reschedule
+		interrupt_table[core][1].handler = CreateEvent(NULL, TRUE, FALSE, NULL);
+		interrupt_table[core][1].is_masked = false;
+		interrupt_table[core][1].routine = do_reschedule;
+
+		// start
+		interrupt_table[core][2].handler = CreateEvent(NULL, TRUE, FALSE, NULL);
+		interrupt_table[core][2].is_masked = false;
+		interrupt_table[core][3].routine = do_start;
+
+		//stop
+		interrupt_table[core][3].handler = CreateEvent(NULL, TRUE, FALSE, NULL);
+		interrupt_table[core][3].is_masked = false;
+		interrupt_table[core][3].routine = do_stop;
+
+		CreateThread(NULL, 0, core_int_thread_entry, &core, 0, NULL);
+	}
+	
 }

@@ -23,7 +23,6 @@ std::string help()
 		"  -h  show this message\n";
 }
 
-
 int main(int argc, char *argv[], char *envp[])
 {
 	bool help_flag = false;
@@ -43,8 +42,8 @@ int main(int argc, char *argv[], char *envp[])
 	}
 
 	init_cpu_core(0);
-	core_int_init(0);
-	HANDLE quit_flag = sched_tick_int_init();
+	core_int_init();
+	HANDLE quit_flag = sched_int_tick_init();
 
 	return 0;
 }
