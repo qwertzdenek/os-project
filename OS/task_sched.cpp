@@ -58,21 +58,10 @@ Scheduler::~Scheduler()
 	// TODO: clean all
 }
 
-Scheduler::TaskDescriptor::TaskDescriptor(Task *task, int timeQuantum)
+int Scheduler::main(int argc, std::string * argv[])
 {
-	this->task = task;
-	this->timeQuantum = timeQuantum;
-}
-
-void Scheduler::run()
-{
-	processNewTasks();
-}
-
-void Scheduler::processNewTasks()
-{
-	Task task = this->newTaskQueue.front();
-	Scheduler::TaskDescriptor *descriptor = new Scheduler::TaskDescriptor(&task, Scheduler::TIME_QUANTUM);
+	// TODO
+	return 0;
 }
 
 bool Scheduler::create_task(std::string name, std::string *argv[])
