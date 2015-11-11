@@ -53,7 +53,7 @@ DWORD WINAPI core_int_thread_entry(void *param)
 	return 0;
 }
 
-void core_int_init()
+void init_cpu_int_table()
 {
 	memset(cpu_int_table_messages, 0, CORE_COUNT * INTERRUPT_COUNT * sizeof(void *));
 
@@ -62,8 +62,7 @@ void core_int_init()
 	cpu_int_table_masked[0][0] = false;
 	cpu_int_table_routines[0][0] = do_schedule;
 
-	// FIXME, only one core for the testing
-	for (int core = 0; core < 1; core++)
+	for (int core = 0; core < CORE_COUNT; core++)
 	{
 		// reschedule
 		cpu_int_table_handlers[core][1] = CreateEvent(NULL, TRUE, FALSE, NULL);

@@ -1,3 +1,3 @@
 #pragma once
 
-void core_int_init();
+void init_cpu_int_table();

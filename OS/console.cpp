@@ -59,7 +59,7 @@ int main(int argc, char *argv[], char *envp[])
 	}
 
 	init_cpu_core(0);
-	core_int_init();
+	init_cpu_int_table();
 	init_scheduler();
 	sched_int_tick(get_main_thread_handle());
 
