@@ -31,7 +31,7 @@ void core_do_interrupt(void *entry_point, int core_number)
 	// push return address on task stack
 	// set interrupt handler on the cpu core
 	ctx.Esp -= sizeof(DWORD32);
-	ctx.Esp = (DWORD32) ctx.Eip;
+	*(DWORD32 *)ctx.Esp = ctx.Eip;
 
 	ctx.Eip = (DWORD32) entry_point;
 
