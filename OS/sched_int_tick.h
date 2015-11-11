@@ -1,3 +1,3 @@
 #pragma once
 
-HANDLE sched_tick_int_init();
+int sched_int_tick(const HANDLE main_thread);

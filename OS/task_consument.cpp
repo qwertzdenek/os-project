@@ -1,7 +1,11 @@
 #include "stdafx.h"
-#include "task_consument.h"
+#include "sched_calls.h"
 
-int Consument::main(int argc, std::string * argv[])
+#include "task_common.h"
+
+void task_main_consument(task_common_pointers *in)
 {
-	return 0;
+	// do something
+
+	exit_task(0);
 }

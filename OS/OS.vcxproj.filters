@@ -39,19 +39,13 @@
     <ClInclude Include="sched_int_tick.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="task.h">
+    <ClInclude Include="cpu.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="task_consument.h">
+    <ClInclude Include="interrupts.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="task_init.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="task_producent.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="task_sched.h">
+    <ClInclude Include="task_common.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="smp.h">
@@ -74,19 +68,19 @@
     <ClCompile Include="sched_int_tick.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="task.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="task_consument.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="task_init.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="task_producent.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="task_sched.cpp">
+    <ClCompile Include="interrupts.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="task_runner.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="sched_calls.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="Smp.cpp">
