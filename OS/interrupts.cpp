@@ -1,6 +1,8 @@
 #include "stdafx.h"
 #include "core.h"
 
+#include "scheduler.h"
+
 __declspec(naked) void do_schedule()
 {
 	// this will be run only on first core
@@ -13,12 +15,9 @@ __declspec(naked) void do_schedule()
 		pushad
 	}
 
-	// TODO: store old task esp into his TCB
+	scheduler_run();
 
-	// TODO: reschedule - change core_tasks pointer
-	// if you want to reschedule another core, store address of
-	// tcb on messages table and interrupt it
-	// -> SetEvent(cpu_int_table_handlers[core][1])
+	// TODO: store old task esp into his TCB
 
 	__asm
 	{

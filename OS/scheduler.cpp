@@ -51,6 +51,10 @@ void scheduler_run()
 	for (int core = 0; core < CORE_COUNT; core++)
 	{
 		// lower all scheduled task their quantum
+
+		// if you want to reschedule to another core, store address of
+		// tcb on messages table and interrupt it
+		// -> SetEvent(cpu_int_table_handlers[core][1])
 	}
 }
 
