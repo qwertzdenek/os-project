@@ -10,6 +10,7 @@
 #include "core_int_thread.h"
 #include "sched_int_tick.h"
 #include "task_sched.h"
+#include "smp.h"
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 /// <summary>	Prints the help. </summary>
@@ -64,4 +65,10 @@ int main(int argc, char *argv[], char *envp[])
 	HANDLE quit_flag = sched_tick_int_init();
 
 	return 0;
+}
+
+void init()
+{
+	SMP *smp = new SMP();
+	smp->start();
 }

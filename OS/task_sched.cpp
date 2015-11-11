@@ -148,3 +148,7 @@ bool Scheduler::create_task(std::string name, std::string *argv[])
 
 	return false;
 }
+
+void runScheduler() {
+
+}
