@@ -58,21 +58,48 @@ Scheduler::~Scheduler()
 	// TODO: clean all
 }
 
-Scheduler::TaskDescriptor::TaskDescriptor(Task *task, int timeQuantum)
+Scheduler::TaskDescriptor::TaskDescriptor(Task &task, int timeQuantum) : task(task), timeQuantum(timeQuantum)
 {
-	this->task = task;
-	this->timeQuantum = timeQuantum;
 }
 
 void Scheduler::run()
 {
 	processNewTasks();
+	processQueue();
 }
 
 void Scheduler::processNewTasks()
 {
-	Task task = this->newTaskQueue.front();
-	Scheduler::TaskDescriptor *descriptor = new Scheduler::TaskDescriptor(&task, Scheduler::TIME_QUANTUM);
+	while (!this->newTaskQueue.empty())
+	{
+		Task task = this->newTaskQueue.front();
+		this->newTaskQueue.pop();
+		Scheduler::TaskDescriptor *descriptor = new Scheduler::TaskDescriptor(task, Scheduler::TIME_QUANTUM);
+		this->taskQueue.push(*descriptor);
+	}
+}
+
+void Scheduler::processQueue()
+{
+	for (int i = 1; i <= SMP::NUMBER_OF_CORES; i++) {
+		Scheduler::TaskDescriptor currentTask = *this->runningTasks[i];
+		currentTask.timeQuantum -= Scheduler::TIME_QUANTUM_DECREASE;
+		if (currentTask.timeQuantum <= 0) {
+			Scheduler::TaskDescriptor newTask = this->taskQueue.front();
+			this->taskQueue.pop();
+			currentTask.timeQuantum = Scheduler::TIME_QUANTUM;
+			this->taskQueue.push(currentTask);
+			this->runTask(newTask);
+			this->runningTasks[i] = &newTask;
+		}
+	}
+	
+	
+}
+
+void Scheduler::runTask(TaskDescriptor &taskDescriptor)
+{
+	// TODO
 }
 
 bool Scheduler::create_task(std::string name, std::string *argv[])
