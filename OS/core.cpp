@@ -2,9 +2,8 @@
 #include <stdio.h>
 
 #include "core.h"
-#include "smp.h"
 
-HANDLE core_handle[SMP::numberOfcores];
+HANDLE core_handle[CORE_COUNT];
 
 DWORD WINAPI init_cpu_idle_task(void *param)
 {

@@ -1,10 +1,8 @@
 #include "stdafx.h"
 #include "sched_calls.h"
 
-#include "common.h"
-
 // argv will be NULL terminated list
-int exec_task(char *name, task_common_pointers *data)
+int exec_task(task_type type, task_common_pointers *data)
 {
 	// TODO
 	return 0;

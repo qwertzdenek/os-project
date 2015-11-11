@@ -9,6 +9,7 @@
 #include "core.h"
 #include "core_int_thread.h"
 #include "sched_int_tick.h"
+#include "scheduler.h"
 
 char *help()
 {
@@ -59,6 +60,7 @@ int main(int argc, char *argv[], char *envp[])
 
 	init_cpu_core(0);
 	core_int_init();
+	init_scheduler();
 	sched_int_tick(get_main_thread_handle());
 
 	return 0;

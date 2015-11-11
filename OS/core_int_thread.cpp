@@ -1,5 +1,4 @@
 #include "stdafx.h"
-#include "common.h"
 #include "core.h"
 #include "core_int_thread.h"
 
@@ -10,9 +9,6 @@ bool cpu_int_table_masked[CORE_COUNT][INTERRUPT_COUNT];
 void *cpu_int_table_routines[CORE_COUNT][INTERRUPT_COUNT];
 HANDLE cpu_int_table_handlers[CORE_COUNT][INTERRUPT_COUNT];
 void *cpu_int_table_messages[CORE_COUNT][INTERRUPT_COUNT];
-
-// actual tasks on cpu
-task_control_block *core_tasks[CORE_COUNT];
 
 // controls int threads
 bool int_thread_running[CORE_COUNT];
