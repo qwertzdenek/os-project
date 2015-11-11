@@ -9,9 +9,8 @@
 #include "core.h"
 #include "core_int_thread.h"
 #include "sched_int_tick.h"
-#include "task_sched.h"
 
-std::string help()
+char *help()
 {
 	return
 		"KIV/OS Scheduler project\n"
@@ -21,6 +20,23 @@ std::string help()
 		"  Tomáš Cígler (drtikozel@gmail.com)\n"
 		"Usage:\n"
 		"  -h  show this message\n";
+}
+
+HANDLE get_main_thread_handle()
+{
+	HANDLE main_thread_handle = 0;
+
+	// get it
+	DuplicateHandle(GetCurrentProcess(),
+		GetCurrentThread(),
+		GetCurrentProcess(),
+		&main_thread_handle,
+		0,
+		TRUE,
+		DUPLICATE_SAME_ACCESS);
+
+	// return it
+	return main_thread_handle;
 }
 
 int main(int argc, char *argv[], char *envp[])
@@ -43,7 +59,7 @@ int main(int argc, char *argv[], char *envp[])
 
 	init_cpu_core(0);
 	core_int_init();
-	HANDLE quit_flag = sched_int_tick_init();
+	sched_int_tick(get_main_thread_handle());
 
 	return 0;
 }

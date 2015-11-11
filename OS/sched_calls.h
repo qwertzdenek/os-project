@@ -3,20 +3,19 @@
 #include <string>
 
 #include "sched.h"
+#include "task_common.h"
 
-// it will add this task to the exec list
-// this memory shoud be copied to the scheduler scope
-// argv: NULL terminated list
-extern void exec_task(std::string name, std::string *argv[]);
+// it will add this task to the exec list and return descriptor
+int exec_task(char *name, task_common_pointers *data);
 
-// returns task id of finished task and fill it's status code.
-extern int wait_task(int *status_code);
+// waits for the task with id and returns return code
+int wait_task(int task_id);
 
 // accuire semaphore and return his value
-extern int semaphore_P(semaphore_t &s);
+int semaphore_P(semaphore_t &s);
 
 // release semaphore and return his value
-extern void semaphore_V(semaphore_t &s);
+void semaphore_V(semaphore_t &s);
 
 // exits the calling process
-extern void exit_task(int result_code);
+void exit_task(int result_code);

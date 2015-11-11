@@ -2,29 +2,18 @@
 #include "cpu.h"
 #include "sched_int_tick.h"
 
-HANDLE quit_flag;
+bool quit = false;
 
-DWORD WINAPI sched_int_tick_entry(void *param)
+// it will return quit handle
+int sched_int_tick(const HANDLE main_thread)
 {
-	bool quit = false;
-
+	SetThreadPriority(main_thread, THREAD_PRIORITY_HIGHEST);
 	do
 	{
-		quit = WaitForSingleObject(quit_flag, 500) == WAIT_OBJECT_0;
+		Sleep(500);
 
-		SetEvent(scheduler_interrupt_handle);
+		SetEvent(cpu_int_table_handlers[0][0]);
 	} while (!quit);
 
 	return 0;
-}
-
-// it will return quit handle
-HANDLE sched_int_tick_init()
-{
-	HANDLE tick_thread = CreateThread(NULL, 0, sched_int_tick_entry, NULL, 0, NULL);
-	SetThreadPriority(tick_thread, THREAD_PRIORITY_HIGHEST);
-
-	quit_flag = CreateEvent(NULL, TRUE, FALSE, NULL);
-
-	return quit_flag;
 }

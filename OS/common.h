@@ -7,9 +7,9 @@ typedef enum {
 } task_state;
 
 typedef struct {
+	void* stack;
 	CONTEXT context;
 	HANDLE stack_handle;
-	void* stack;
 	int task_id;
 	time_t started;
 	task_state state;
