@@ -10,7 +10,7 @@ typedef enum {
 } task_state;
 
 typedef enum {
-	RUNNER, CONSUMENT, PRODUCENT
+	RUNNER, CONSUMENT, PRODUCENT, IDLE
 } task_type;
 
 typedef struct {
@@ -31,7 +31,16 @@ typedef struct
 	std::array<int, BUFFER_SIZE> buffer;
 } task_common_pointers;
 
+typedef struct {
+	int task_id;
+	task_type type;
+	std::unique_ptr<task_common_pointers> tcp;
+} new_task_req;
+
 DWORD __stdcall task_main_consument(task_common_pointers *in);
 DWORD __stdcall task_main_producent(task_common_pointers *in);
 DWORD __stdcall task_main_runner();
 DWORD __stdcall task_main_idle(void *);
+
+// mapping from the task_type struct to pointers
+extern void *task_entry_points[4];

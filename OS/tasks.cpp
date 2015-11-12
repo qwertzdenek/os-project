@@ -3,6 +3,9 @@
 
 #include "tasks.h"
 
+void *task_entry_points[4] = { task_main_runner, task_main_consument,
+							   task_main_producent, task_main_idle};
+
 DWORD __stdcall task_main_idle(void *)
 {
 	while (1)

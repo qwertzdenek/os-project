@@ -1,7 +1,12 @@
 #pragma once
 
+#include <queue>
+#include<memory>
+
 #include "tasks.h"
 
 void init_scheduler();
-void scheduler_run();
-void run_task(task_control_block newTask, int core);
+DWORD scheduler_run();
+
+int sched_request_task(task_type type, task_common_pointers *data);
+void sched_request_exit(int task_id);

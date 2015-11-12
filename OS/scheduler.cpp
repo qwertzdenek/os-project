@@ -1,73 +1,131 @@
 #include "stdafx.h"
 
-#include<queue>
-
 #include "scheduler.h"
 #include "tasks.h"
 #include "core.h"
 
-#define NUMBER_OF_TICKS_TO_RESCHEDULE 100
-#define TIME_QUANTUM 25
+#define TIME_QUANTUM 100
 #define TIME_QUANTUM_DECREASE 25
 
 // actual assigned tasks
-task_control_block *running_tasks[CORE_COUNT];
+std::unique_ptr<task_control_block> running_tasks[CORE_COUNT];
 
 // main task queue
-std::queue<task_control_block> task_queue;
+std::queue<std::unique_ptr<task_control_block>> task_queue;
 
 // main task queue
 // TODO: add task_common_pointers
-std::queue<task_type> new_task_queue;
+std::queue<std::unique_ptr<new_task_req>> new_task_queue;
 
 unsigned long tick_count = 0;
 int task_counter = 0;
 CONTEXT default_context;
 
-void create_task(task_control_block *tcb, task_type type)
+void esp_push(DWORD *esp, DWORD value)
 {
-	tcb->context = default_context;
-	tcb->stack = _aligned_malloc(THREAD_STACK_SIZE, 64);
-	tcb->context.Esp = (DWORD32)tcb->stack + THREAD_STACK_SIZE - sizeof(DWORD32);
-	tcb->task_id = task_counter++;
-	tcb->quantum = TIME_QUANTUM;
-	tcb->state = RUNNABLE;
-	tcb->type = type;
+	*esp -= sizeof(DWORD);
+	*(DWORD *)*esp = value;
 }
 
-void scheduler_run()
+DWORD esp_pop(DWORD *esp)
 {
+	DWORD value = *(DWORD *)*esp;
+	*esp += sizeof(DWORD);
+	return value;
+}
+
+// returns new task id
+int sched_request_task(task_type type, task_common_pointers *data)
+{
+	std::unique_ptr<new_task_req> request(new new_task_req);
+	request->tcp.reset(data);
+	request->type = type;
+	request->task_id = task_counter++;
+	new_task_queue.push(std::move(request));
+
+	return request->task_id;
+}
+
+void sched_request_exit(int task_id)
+{
+	// TODO
+}
+
+void sched_create_task(task_control_block &tcb, new_task_req &req)
+{
+	tcb.context = default_context;
+	tcb.stack = _aligned_malloc(THREAD_STACK_SIZE, 64);
+
+	tcb.context.Esp = (DWORD)tcb.stack + THREAD_STACK_SIZE;
+	// return to idle task in case of problem.
+	esp_push(&tcb.context.Esp, (DWORD)task_entry_points[IDLE]);
+	esp_push(&tcb.context.Esp, (DWORD)req.tcp.get());
+	tcb.context.Eip = (DWORD)task_entry_points[req.type];
+
+	tcb.task_id = req.task_id;
+	tcb.quantum = TIME_QUANTUM;
+	tcb.state = RUNNABLE;
+	tcb.type = req.type;
+}
+
+DWORD scheduler_run()
+{
+	CONTEXT zero_core_context;
+
 	// check for new tasks
 	while (!new_task_queue.empty())
 	{
-		task_type task = new_task_queue.front();
+		std::unique_ptr<new_task_req> task_request(std::move(new_task_queue.front()));
 		new_task_queue.pop();
 
-		task_control_block *tcb = new task_control_block;
-		create_task(tcb, task);
-		task_queue.push(*tcb);
+		std::unique_ptr<task_control_block> tcb(new task_control_block);
+		sched_create_task(*tcb, *task_request);
+		task_queue.push(std::move(tcb));
 	}
 
 	for (int core = 0; core < CORE_COUNT; core++)
 	{
-		task_control_block *currentTask = running_tasks[core];
-		currentTask->quantum -= TIME_QUANTUM_DECREASE;
-		if (currentTask->quantum <= 0) {
-			task_control_block newTask = task_queue.front();
+		std::unique_ptr<task_control_block> current_task(std::move(running_tasks[core]));
+		if (current_task == NULL)
+			continue; // FIXME: we should do something with it
+
+		current_task->quantum -= TIME_QUANTUM_DECREASE;
+		if (current_task->quantum <= 0)
+		{
+			if (task_queue.empty())
+			{
+				std::unique_ptr<new_task_req> task_request(new new_task_req);
+				std::unique_ptr<task_control_block> tcb(new task_control_block);
+
+				task_request->tcp = NULL;
+				task_request->type = IDLE;
+				task_request->task_id = task_counter++;
+
+				sched_create_task(*tcb, *task_request);
+				task_queue.push(std::move(tcb));
+			}
+
+			std::unique_ptr<task_control_block> new_task(std::move(task_queue.front()));
 			task_queue.pop();
-			currentTask->quantum = TIME_QUANTUM;
-			task_queue.push(*currentTask);
-			run_task(newTask, core);
-			running_tasks[core] = &newTask;
+
+			current_task->quantum = TIME_QUANTUM;
+			task_queue.push(std::move(current_task));
+
+			if (core == 0)
+			{
+				zero_core_context = new_task->context;
+			}
+			else
+			{
+				cpu_int_table_messages[core][1] = new_task.get();
+				SetEvent(cpu_int_table_handlers[core][1]);
+			}
+
+			running_tasks[core] = std::move(new_task);
 		}
-
 	}
-}
 
-void run_task(task_control_block newTask, int core){
-	if (core != 0) {
-		SetEvent(cpu_int_table_handlers[core][1]);
-	}
+	return zero_core_context.Esp;
 }
 
 void init_scheduler()

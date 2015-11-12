@@ -13,14 +13,11 @@ __declspec(naked) void do_schedule()
 
 		; push general registers
 		pushad
-	}
 
-	scheduler_run();
+		call scheduler_run
 
-	// TODO: store old task esp into his TCB
+		mov esp, eax
 
-	__asm
-	{
 		; pop flags
 		popad
 
