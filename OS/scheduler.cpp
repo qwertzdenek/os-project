@@ -13,9 +13,11 @@ std::unique_ptr<task_control_block> running_tasks[CORE_COUNT];
 // main task queue
 std::queue<std::unique_ptr<task_control_block>> task_queue;
 
-// main task queue
-// TODO: add task_common_pointers
+// new task queue
 std::queue<std::unique_ptr<new_task_req>> new_task_queue;
+
+// exit task requests queue
+std::queue<int> exit_task_queue;
 
 unsigned long tick_count = 0;
 int task_counter = 0;
@@ -48,7 +50,12 @@ int sched_request_task(task_type type, task_common_pointers *data)
 
 void sched_request_exit(int task_id)
 {
-	// TODO
+	exit_task_queue.push(task_id);
+}
+
+int shed_get_tid()
+{
+	return running_tasks[actual_core()]->task_id;
 }
 
 void sched_create_task(task_control_block &tcb, new_task_req &req)
@@ -117,7 +124,7 @@ DWORD scheduler_run()
 			}
 			else
 			{
-				cpu_int_table_messages[core][1] = new_task.get();
+				cpu_int_table_messages[core][1] = new_task->stack;
 				SetEvent(cpu_int_table_handlers[core][1]);
 			}
 

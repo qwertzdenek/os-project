@@ -26,7 +26,7 @@ DWORD __stdcall task_main_runner()
 
 	delete struct_ptr;
 
-	exit_task(0);
+	exit_task();
 	return 0;
 }
 
@@ -34,7 +34,7 @@ DWORD __stdcall task_main_producent(task_common_pointers *in)
 {
 	// do something
 
-	exit_task(0);
+	exit_task();
 	return 0;
 }
 
@@ -42,6 +42,6 @@ DWORD __stdcall task_main_consument(task_common_pointers *in)
 {
 	// do something
 
-	exit_task(0);
+	exit_task();
 	return 0;
 }

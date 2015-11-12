@@ -13,14 +13,14 @@ int wait_task(int task_id)
 	return 0;
 }
 
-void exit_task(int result_code)
+void exit_task()
 {
 	sched_request_exit(get_tid());
 }
 
 int get_tid()
 {
-	// TODO
+	return shed_get_tid();
 }
 
 int semaphore_P(semaphore_t &s)
