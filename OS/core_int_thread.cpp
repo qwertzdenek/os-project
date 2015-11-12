@@ -42,7 +42,13 @@ DWORD WINAPI core_int_thread_entry(void *param)
 
 	while (int_thread_running[core_number]) {
 		int num = WaitForMultipleObjects(INTERRUPT_COUNT,
-			cpu_int_table_handlers[core_number], false, INFINITE) == WAIT_OBJECT_0;
+			cpu_int_table_handlers[core_number], false, INFINITE);
+
+		if (num == WAIT_FAILED)
+		{
+			printf("Interrupt error %d\n", GetLastError());
+			continue;
+		}
 
 		if (cpu_int_table_masked[core_number][num])
 			continue;
@@ -62,6 +68,18 @@ void init_cpu_int_table()
 	cpu_int_table_masked[0][0] = false;
 	cpu_int_table_routines[0][0] = do_schedule;
 
+	cpu_int_table_handlers[1][0] = CreateEvent(NULL, TRUE, FALSE, NULL);
+	cpu_int_table_masked[1][0] = true;
+	cpu_int_table_routines[1][0] = do_schedule;
+
+	cpu_int_table_handlers[2][0] = CreateEvent(NULL, TRUE, FALSE, NULL);
+	cpu_int_table_masked[2][0] = true;
+	cpu_int_table_routines[2][0] = do_schedule;
+
+	cpu_int_table_handlers[3][0] = CreateEvent(NULL, TRUE, FALSE, NULL);
+	cpu_int_table_masked[3][0] = true;
+	cpu_int_table_routines[3][0] = do_schedule;
+
 	for (int core = 0; core < CORE_COUNT; core++)
 	{
 		// reschedule
@@ -78,6 +96,14 @@ void init_cpu_int_table()
 		cpu_int_table_handlers[core][3] = CreateEvent(NULL, TRUE, FALSE, NULL);
 		cpu_int_table_masked[core][3] = false;
 		cpu_int_table_routines[core][3] = do_stop;
+
+		// initialize rest of them as masked
+		for (int i = 4; i < INTERRUPT_COUNT; i++)
+		{
+			cpu_int_table_handlers[core][i] = CreateEvent(NULL, TRUE, FALSE, NULL);
+			cpu_int_table_masked[core][i] = true;
+			cpu_int_table_routines[core][i] = NULL;
+		}
 
 		HANDLE int_thread = CreateThread(NULL, 0, core_int_thread_entry, (void *) core, 0, NULL);
 		SetThreadAffinityMask(int_thread, 0x1 << core);

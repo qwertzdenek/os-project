@@ -36,6 +36,15 @@ DWORD esp_pop(DWORD *esp)
 	return value;
 }
 
+void __stdcall update_esp(DWORD esp)
+{
+	int core = actual_core();
+	if (running_tasks[core] != NULL)
+	{
+		running_tasks[core]->stack = (void *)esp;
+	}
+}
+
 // returns new task id
 int sched_request_task(task_type type, task_common_pointers *data)
 {
@@ -64,10 +73,25 @@ void sched_create_task(task_control_block &tcb, new_task_req &req)
 	tcb.stack = _aligned_malloc(THREAD_STACK_SIZE, 64);
 
 	tcb.context.Esp = (DWORD)tcb.stack + THREAD_STACK_SIZE;
-	// return to idle task in case of problem.
-	esp_push(&tcb.context.Esp, (DWORD)task_entry_points[IDLE]);
+	// push argument 
 	esp_push(&tcb.context.Esp, (DWORD)req.tcp.get());
-	tcb.context.Eip = (DWORD)task_entry_points[req.type];
+	// push return address to idle task
+	esp_push(&tcb.context.Esp, (DWORD)task_entry_points[IDLE]);
+	// push argument
+	esp_push(&tcb.context.Esp, (DWORD)task_entry_points[req.type]);
+	// push status word
+	esp_push(&tcb.context.Esp, 0x0202);
+	// push dummy registers
+	esp_push(&tcb.context.Esp, 0xaa); // eax
+	esp_push(&tcb.context.Esp, 0xcc);
+	esp_push(&tcb.context.Esp, 0xdd);
+	esp_push(&tcb.context.Esp, 0xbb);
+	esp_push(&tcb.context.Esp, tcb.context.Esp - 4*sizeof(DWORD));
+	esp_push(&tcb.context.Esp, 0xeb);
+	esp_push(&tcb.context.Esp, 0xa0);
+	esp_push(&tcb.context.Esp, 0xb0); // edi
+
+	tcb.stack = (void *) tcb.context.Esp;
 
 	tcb.task_id = req.task_id;
 	tcb.quantum = TIME_QUANTUM;
@@ -77,7 +101,7 @@ void sched_create_task(task_control_block &tcb, new_task_req &req)
 
 DWORD scheduler_run()
 {
-	CONTEXT zero_core_context;
+	CONTEXT zero_core_context = default_context;
 
 	// check for new tasks
 	while (!new_task_queue.empty())
@@ -94,29 +118,28 @@ DWORD scheduler_run()
 	{
 		std::unique_ptr<task_control_block> current_task(std::move(running_tasks[core]));
 		if (current_task == NULL)
-			continue; // FIXME: we should do something with it
+			continue;
 
 		current_task->quantum -= TIME_QUANTUM_DECREASE;
 		if (current_task->quantum <= 0)
 		{
+			std::unique_ptr<task_control_block> new_task;
+
 			if (task_queue.empty())
 			{
-				std::unique_ptr<new_task_req> task_request(new new_task_req);
-				std::unique_ptr<task_control_block> tcb(new task_control_block);
+				current_task->quantum = TIME_QUANTUM;
+				new_task = std::move(current_task);
+			}
+			else
+			{
+				current_task->state = RUNNABLE;
+				new_task = std::move(task_queue.front());
+				task_queue.pop();
 
-				task_request->tcp = NULL;
-				task_request->type = IDLE;
-				task_request->task_id = task_counter++;
-
-				sched_create_task(*tcb, *task_request);
-				task_queue.push(std::move(tcb));
+				task_queue.push(std::move(current_task));
 			}
 
-			std::unique_ptr<task_control_block> new_task(std::move(task_queue.front()));
-			task_queue.pop();
-
-			current_task->quantum = TIME_QUANTUM;
-			task_queue.push(std::move(current_task));
+			new_task->state = RUNNING;
 
 			if (core == 0)
 			{
@@ -142,4 +165,16 @@ void init_scheduler()
 
 	default_context.ContextFlags = CONTEXT_ALL;
 	GetThreadContext(CPUCore, &default_context);
+
+	// initialize first idle task on first core
+	std::unique_ptr<new_task_req> task_request(new new_task_req);
+	std::unique_ptr<task_control_block> tcb(new task_control_block);
+
+	task_request->tcp = NULL;
+	task_request->type = IDLE;
+	task_request->task_id = task_counter++;
+
+	sched_create_task(*tcb, *task_request);
+	tcb->quantum = 0;
+	running_tasks[0] = std::move(tcb);
 }

@@ -24,8 +24,6 @@ DWORD __stdcall task_main_runner()
 	wait_task(prod_id);
 	wait_task(cons_id);
 
-	delete struct_ptr;
-
 	exit_task();
 	return 0;
 }

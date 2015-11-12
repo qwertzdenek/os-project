@@ -14,6 +14,9 @@ __declspec(naked) void do_schedule()
 		; push general registers
 		pushad
 
+		push esp
+		call update_esp
+
 		call scheduler_run
 		mov esp, eax
 

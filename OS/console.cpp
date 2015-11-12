@@ -59,6 +59,9 @@ int main(int argc, char *argv[], char *envp[])
 	}
 
 	init_cpu_core(0);
+	init_cpu_core(1);
+	init_cpu_core(2);
+	init_cpu_core(3);
 	init_cpu_int_table();
 	init_scheduler();
 	sched_int_tick(get_main_thread_handle());
