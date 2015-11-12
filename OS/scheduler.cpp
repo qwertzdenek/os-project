@@ -50,11 +50,23 @@ void scheduler_run()
 
 	for (int core = 0; core < CORE_COUNT; core++)
 	{
-		// lower all scheduled task their quantum
+		task_control_block *currentTask = running_tasks[core];
+		currentTask->quantum -= TIME_QUANTUM_DECREASE;
+		if (currentTask->quantum <= 0) {
+			task_control_block newTask = task_queue.front();
+			task_queue.pop();
+			currentTask->quantum = TIME_QUANTUM;
+			task_queue.push(*currentTask);
+			run_task(newTask, core);
+			running_tasks[core] = &newTask;
+		}
 
-		// if you want to reschedule to another core, store address of
-		// tcb on messages table and interrupt it
-		// -> SetEvent(cpu_int_table_handlers[core][1])
+	}
+}
+
+void run_task(task_control_block newTask, int core){
+	if (core != 0) {
+		SetEvent(cpu_int_table_handlers[core][1]);
 	}
 }
 
