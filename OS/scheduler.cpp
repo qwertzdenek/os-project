@@ -47,11 +47,7 @@ void __stdcall update_esp(DWORD esp)
 
 void __stdcall load_esp()
 {
-	int core = actual_core();
-	if (running_tasks[core] != NULL)
-	{
-		running_tasks[core]->stack = (void *)esp;
-	}
+	// TODO
 }
 
 // returns new task id
