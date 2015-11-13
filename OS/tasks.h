@@ -1,6 +1,7 @@
 #pragma once
 
 #include <array>
+#include <memory>
 #include "sched.h"
 
 #define BUFFER_SIZE 512

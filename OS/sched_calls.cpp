@@ -24,47 +24,26 @@ int get_tid()
 }
 
 // release semaphore and return his value
-void semaphore_V(semaphore_t &s)
+void semaphore_V(semaphore_t &s, int value)
 {
-    s._value++;
+    s._value += value;
 }
 
 // accuire semaphore and return his value
-int semaphore_P(semaphore_t &s)
+int semaphore_P(semaphore_t &s, int value)
 {
-    bool exchanged = false;
-    int value;
-	bool new_bool = true;
-	bool &ref_new_bool = new_bool;
+	int expected;
+	int old;
 
-    printf("Current semaphore value: %d", s._value.load());
-    // wait for semafore to have free space
-    while (s._value <= 0)
-	{
-    }
+	do {
+		old = s._value;
+		expected = old - value;
+	} while (expected <= 0);
+	
+	while (!s._value.compare_exchange_weak(old, expected,
+		std::memory_order_release,
+		std::memory_order_relaxed))
+		;
 
-    while (!exchanged)
-	{
-
-        printf("Is semaphore in use: %s", s._PMutexAquired ? "true" : "false");
-        // wait for last writer to release mutex
-        while (s._PMutexAquired)
-		{
-        }
-
-        exchanged = s._PMutexAquired.compare_exchange_weak(ref_new_bool, false);
-		
-        if (exchanged)
-		{
-            printf("mutex was aquired");
-            // wait till some space is released
-            while (s._value <= 0)
-			{
-            }
-
-            value = --(s._value);
-        }
-    }
-
-    return value;
+	return expected;
 }
