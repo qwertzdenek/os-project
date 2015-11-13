@@ -1,10 +1,9 @@
 #pragma once
 
+#include <atomic>
 #include <mutex>
-#include <deque>
 
 typedef struct {
-	int _semaphore_value;
-	std::deque<int> _waiting;
-	std::mutex _waiting_lock;
+    std::atomic<int> _value;
+    std::atomic<bool> _PMutexAquired;
 } semaphore_t;

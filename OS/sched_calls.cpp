@@ -14,17 +14,46 @@ int wait_task(int task_id)
 	return 0;
 }
 
-int semaphore_P(semaphore_t &s)
-{
-	// TODO
-	return 0;
+// accuire semaphore and return his value
+
+int semaphore_P(semaphore_t &s) {
+    bool exchanged = false;
+    int value;
+
+    printf("Current semaphore value: %d", s->_value);
+    // wait for semafore to have free space
+    while (s->_value <= 0) {
+    }
+
+    while (!exchanged) {
+
+        printf("Is semaphore in use: %s", s->_PMutexAquired ? "true" : "false");
+        // wait for last writer to release mutex
+        while (s->_PMutexAquired) {
+        }
+
+        exchanged = s->_PMutexAquired.compare_exchange_weak(true, false);
+
+        if (exchanged) {
+            printf("mutex was aquired");
+            // wait till some space is released
+            while (s->_value <= 0) {
+            }
+
+            value = --(s->_value);
+        }
+    }
+
+    return value;
 }
 
-void semaphore_V(semaphore_t &s)
-{
-	// TODO
+// release semaphore and return his value
+
+void semaphore_V(semaphore_t &s) {
+    s->_value++;
 }
 
+// exits the calling process
 void exit_task(int result_code)
 {
 	// TODO
