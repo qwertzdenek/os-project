@@ -28,6 +28,7 @@ void core_do_interrupt(void *entry_point, int core_number)
 	// set interrupt handler on the cpu core
 	ctx.Esp -= sizeof(DWORD32);
 	*(DWORD32 *)ctx.Esp = ctx.Eip;
+	// store flags and general registers on stack here
 
 	ctx.Eip = (DWORD32) entry_point;
 
