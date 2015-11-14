@@ -36,14 +36,13 @@ int semaphore_P(semaphore_t &s, int value)
 	int old;
 
 	do {
-		old = s._value;
-		expected = old - value;
-	} while (expected <= 0);
-	
-	while (!s._value.compare_exchange_weak(old, expected,
+		do {
+			old = s._value;
+			expected = old - value;
+		} while (expected <= 0);
+	} while (!s._value.compare_exchange_weak(old, expected,
 		std::memory_order_release,
-		std::memory_order_relaxed))
-		;
+		std::memory_order_relaxed));
 
 	return expected;
 }
