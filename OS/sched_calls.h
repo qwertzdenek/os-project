@@ -18,7 +18,7 @@ void exit_task();
 int get_tid();
 
 // accuire semaphore and return his value
-int semaphore_P(semaphore_t &s);
+int semaphore_P(semaphore_t &s, int value);
 
 // release semaphore and return his value
-void semaphore_V(semaphore_t &s);
+void semaphore_V(semaphore_t &s, int value);
