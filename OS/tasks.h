@@ -4,8 +4,6 @@
 #include <memory>
 #include "sched.h"
 
-#define BUFFER_SIZE 512
-
 typedef enum {
 	RUNNABLE, BLOCKED, RUNNING, TERMINATED
 } task_state;
@@ -25,11 +23,11 @@ typedef struct {
 
 typedef struct
 {
-	semaphore_t prod_lock;
-	semaphore_t cons_lock;
-	semaphore_t data_lock;
-
-	std::array<int, BUFFER_SIZE> buffer;
+	semaphore_t full;
+	semaphore_t empty;
+	semaphore_t mutex;
+        
+        Buffer buffer;
 } task_common_pointers;
 
 typedef struct {
