@@ -17,37 +17,33 @@ std::queue<std::unique_ptr<task_control_block>> task_queue;
 std::queue<std::unique_ptr<new_task_req>> new_task_queue;
 
 // exit task requests queue
-std::queue<int> exit_task_queue;
+std::queue<std::unique_ptr<task_control_block>> exit_task_queue;
 
 unsigned long tick_count = 0;
 int task_counter = 0;
 CONTEXT default_context;
 
-void esp_push(DWORD *esp, DWORD value)
-{
-	*esp -= sizeof(DWORD);
-	*(DWORD *)*esp = value;
-}
-
-DWORD esp_pop(DWORD *esp)
-{
-	DWORD value = *(DWORD *)*esp;
-	*esp += sizeof(DWORD);
-	return value;
-}
-
-void __stdcall update_esp(DWORD esp)
+void sched_end_task_callback()
 {
 	int core = actual_core();
-	if (running_tasks[core] != NULL)
-	{
-		running_tasks[core]->stack = (void *)esp;
-	}
-}
 
-void __stdcall load_esp()
-{
-	// TODO
+	if (task_queue.empty())
+	{
+		running_tasks[core].release();
+
+		// interrupt scheduler
+		SetEvent(cpu_int_table_handlers[0][0]);
+		SuspendThread(GetCurrentThread());
+	}
+	else
+	{
+		std::unique_ptr<task_control_block> next_task(std::move(task_queue.front()));
+		task_queue.pop();
+
+		cpu_int_table_messages[core][1] = (void *)next_task->context.Esp;
+		SetEvent(cpu_int_table_handlers[core][1]);
+	}
+
 }
 
 // returns new task id
@@ -62,9 +58,9 @@ int sched_request_task(task_type type, task_common_pointers *data)
 	return request->task_id;
 }
 
-void sched_request_exit(int task_id)
+void sched_request_exit(int core_number)
 {
-	exit_task_queue.push(task_id);
+	exit_task_queue.push(std::move(running_tasks[core_number]));
 }
 
 int shed_get_tid()
@@ -75,13 +71,12 @@ int shed_get_tid()
 void sched_create_task(task_control_block &tcb, new_task_req &req)
 {
 	tcb.context = default_context;
-	tcb.stack = _aligned_malloc(THREAD_STACK_SIZE, 64);
 
-	tcb.context.Esp = (DWORD)tcb.stack + THREAD_STACK_SIZE;
+	tcb.context.Esp = (DWORD)tcb.stack + TASK_STACK_SIZE;
 	// push argument 
 	esp_push(&tcb.context.Esp, (DWORD)req.tcp.get());
-	// push return address to idle task
-	esp_push(&tcb.context.Esp, (DWORD)task_entry_points[IDLE]);
+	// push return address to plan next task
+	esp_push(&tcb.context.Esp, (DWORD)sched_end_task_callback);
 	// push argument
 	esp_push(&tcb.context.Esp, (DWORD)task_entry_points[req.type]);
 	// push status word
@@ -96,8 +91,6 @@ void sched_create_task(task_control_block &tcb, new_task_req &req)
 	esp_push(&tcb.context.Esp, 0xa0);
 	esp_push(&tcb.context.Esp, 0xb0); // edi
 
-	tcb.stack = (void *) tcb.context.Esp;
-
 	tcb.task_id = req.task_id;
 	tcb.quantum = TIME_QUANTUM;
 	tcb.state = RUNNABLE;
@@ -106,7 +99,15 @@ void sched_create_task(task_control_block &tcb, new_task_req &req)
 
 DWORD scheduler_run()
 {
-	CONTEXT zero_core_context = default_context;
+	CONTEXT target_contexts[CORE_COUNT];
+	bool context_changed[CORE_COUNT];
+	memset(&context_changed, 0, CORE_COUNT * sizeof(bool));
+
+	// clean up exited tasks
+	while (!exit_task_queue.empty())
+	{
+		exit_task_queue.pop();
+	}
 
 	// check for new tasks
 	while (!new_task_queue.empty())
@@ -121,46 +122,72 @@ DWORD scheduler_run()
 
 	for (int core = 0; core < CORE_COUNT; core++)
 	{
+		std::unique_ptr<task_control_block> new_task;
 		std::unique_ptr<task_control_block> current_task(std::move(running_tasks[core]));
-		if (current_task == NULL)
-			continue;
 
-		current_task->quantum -= TIME_QUANTUM_DECREASE;
-		if (current_task->quantum <= 0)
+		target_contexts[core] = default_context;
+
+		// if something is on the core
+		if (current_task.get() != NULL)
 		{
-			std::unique_ptr<task_control_block> new_task;
-
-			if (task_queue.empty())
+			current_task->quantum -= TIME_QUANTUM_DECREASE;
+			if (current_task->quantum < 0)
 			{
 				current_task->quantum = TIME_QUANTUM;
-				new_task = std::move(current_task);
-			}
-			else
-			{
 				current_task->state = RUNNABLE;
-				new_task = std::move(task_queue.front());
-				task_queue.pop();
-
 				task_queue.push(std::move(current_task));
 			}
+			else
+			{
+				context_changed[core] = false;
+				continue;
+			}
+		}
 
-			new_task->state = RUNNING;
-
+		if (task_queue.empty())
+		{
 			if (core == 0)
 			{
-				zero_core_context = new_task->context;
+				// create new IDLE task
+				std::unique_ptr<new_task_req> task_request(new new_task_req);
+				task_request->tcp = NULL;
+				task_request->type = IDLE;
+				task_request->task_id = task_counter++;
+
+				new_task.reset(new task_control_block);
+				sched_create_task(*new_task, *task_request);
 			}
 			else
 			{
-				cpu_int_table_messages[core][1] = new_task->stack;
-				SetEvent(cpu_int_table_handlers[core][1]);
+				SetEvent(cpu_int_table_handlers[core][3]);
+				running_tasks[core].release();
 			}
+		}
+		else
+		{
+			new_task = std::move(task_queue.front());
+			task_queue.pop();
+		}
 
-			running_tasks[core] = std::move(new_task);
+		new_task->state = RUNNING;
+
+		context_changed[core] = true;
+		target_contexts[core] = new_task->context;
+
+		running_tasks[core] = std::move(new_task);
+	}
+
+	// send final reschedule events to the other cores
+	for (int core = 1; core < CORE_COUNT; core++)
+	{
+		if (context_changed[core])
+		{
+			cpu_int_table_messages[core][1] = (void *)target_contexts[core].Esp;
+			SetEvent(cpu_int_table_handlers[core][1]);
 		}
 	}
 
-	return zero_core_context.Esp;
+	return target_contexts[0].Esp;
 }
 
 void init_scheduler()
@@ -172,14 +199,14 @@ void init_scheduler()
 	GetThreadContext(CPUCore, &default_context);
 
 	// initialize first idle task on first core
-	std::unique_ptr<new_task_req> task_request(new new_task_req);
+	new_task_req task_request;
 	std::unique_ptr<task_control_block> tcb(new task_control_block);
 
-	task_request->tcp = NULL;
-	task_request->type = IDLE;
-	task_request->task_id = task_counter++;
+	task_request.tcp = NULL;
+	task_request.type = IDLE;
+	task_request.task_id = task_counter++;
 
-	sched_create_task(*tcb, *task_request);
+	sched_create_task(*tcb, task_request);
 	tcb->quantum = 0;
 	running_tasks[0] = std::move(tcb);
 }

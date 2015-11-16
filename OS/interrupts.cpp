@@ -8,15 +8,6 @@ __declspec(naked) void do_schedule()
 	// this will run only on the first core
 	__asm
 	{
-		; push flags
-		pushfd
-
-		; push general registers
-		pushad
-
-		push esp
-		call update_esp
-
 		call scheduler_run
 		mov esp, eax
 
@@ -34,9 +25,6 @@ __declspec(naked) void do_reschedule()
 {
 	__asm
 	{
-		pushfd
-		pushad
-
 		call actual_core
 		mov ecx, eax
 		mov eax, 4; pointer is 4 bytes
@@ -53,14 +41,4 @@ __declspec(naked) void do_reschedule()
 
 		ret
 	}
-}
-
-__declspec(naked) void do_start()
-{
-	// ResumeThread()
-}
-
-__declspec(naked) void do_stop()
-{
-	// TerminateThread()
 }

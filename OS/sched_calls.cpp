@@ -1,6 +1,7 @@
 #include "stdafx.h"
 #include "sched_calls.h"
 #include "scheduler.h"
+#include "core.h"
 
 int exec_task(task_type type, task_common_pointers *data)
 {
@@ -15,7 +16,7 @@ int wait_task(int task_id)
 
 void exit_task()
 {
-	sched_request_exit(get_tid());
+	sched_request_exit(actual_core());
 }
 
 int get_tid()

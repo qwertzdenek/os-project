@@ -13,6 +13,22 @@ void *cpu_int_table_messages[CORE_COUNT][INTERRUPT_COUNT];
 // controls int threads
 bool int_thread_running[CORE_COUNT];
 
+void core_do_stop(int core_number)
+{
+	int_thread_running[core_number] = false;
+	TerminateThread(core_handle[core_number], 0);
+}
+
+void core_do_resume(int core_number)
+{
+	ResumeThread(core_handle[core_number]);
+}
+
+void core_do_suspend(int core_number)
+{
+	SuspendThread(core_handle[core_number]);
+}
+
 void core_do_interrupt(void *entry_point, int core_number)
 {
 	CONTEXT ctx;
@@ -28,7 +44,19 @@ void core_do_interrupt(void *entry_point, int core_number)
 	// set interrupt handler on the cpu core
 	ctx.Esp -= sizeof(DWORD32);
 	*(DWORD32 *)ctx.Esp = ctx.Eip;
+
 	// store flags and general registers on stack here
+	esp_push(&ctx.Esp, ctx.ContextFlags);
+	// push dummy registers
+	esp_push(&ctx.Esp, ctx.Eax);
+	esp_push(&ctx.Esp, ctx.Ecx);
+	esp_push(&ctx.Esp, ctx.Edx);
+	esp_push(&ctx.Esp, ctx.Ebx);
+	DWORD new_esp = ctx.Esp - 4 * sizeof(DWORD);
+	esp_push(&ctx.Esp, new_esp);
+	esp_push(&ctx.Esp, ctx.Ebp);
+	esp_push(&ctx.Esp, ctx.Esi);
+	esp_push(&ctx.Esp, ctx.Edi);
 
 	ctx.Eip = (DWORD32) entry_point;
 
@@ -54,7 +82,22 @@ DWORD WINAPI core_int_thread_entry(void *param)
 		if (cpu_int_table_masked[core_number][num])
 			continue;
 
-		core_do_interrupt(cpu_int_table_routines[core_number][num], core_number);
+		switch (num) {
+		case 0:
+		case 1:
+			core_do_interrupt(cpu_int_table_routines[core_number][num], core_number);
+			break;
+		case 2:
+			core_do_stop(core_number);
+			break;
+		case 3:
+			core_do_resume(core_number);
+			break;
+		case 4:
+			core_do_suspend(core_number);
+			break;
+		}
+
 		ResetEvent(cpu_int_table_handlers[core_number][num]);
 	}
 	return 0;
@@ -65,41 +108,35 @@ void init_cpu_int_table()
 	memset(cpu_int_table_messages, 0, CORE_COUNT * INTERRUPT_COUNT * sizeof(void *));
 
 	// scheduler interrupt timer
-	cpu_int_table_handlers[0][0] = CreateEvent(NULL, TRUE, FALSE, NULL);
-	cpu_int_table_masked[0][0] = false;
-	cpu_int_table_routines[0][0] = do_schedule;
-
-	cpu_int_table_handlers[1][0] = CreateEvent(NULL, TRUE, FALSE, NULL);
-	cpu_int_table_masked[1][0] = true;
-	cpu_int_table_routines[1][0] = do_schedule;
-
-	cpu_int_table_handlers[2][0] = CreateEvent(NULL, TRUE, FALSE, NULL);
-	cpu_int_table_masked[2][0] = true;
-	cpu_int_table_routines[2][0] = do_schedule;
-
-	cpu_int_table_handlers[3][0] = CreateEvent(NULL, TRUE, FALSE, NULL);
-	cpu_int_table_masked[3][0] = true;
-	cpu_int_table_routines[3][0] = do_schedule;
-
 	for (int core = 0; core < CORE_COUNT; core++)
 	{
+		// schedule
+		cpu_int_table_handlers[core][0] = CreateEvent(NULL, TRUE, FALSE, NULL);
+		cpu_int_table_masked[core][0] = core == 0 ? false : true;
+		cpu_int_table_routines[core][0] = do_schedule;
+
 		// reschedule
 		cpu_int_table_handlers[core][1] = CreateEvent(NULL, TRUE, FALSE, NULL);
 		cpu_int_table_masked[core][1] = false;
 		cpu_int_table_routines[core][1] = do_reschedule;
 
-		// start
+		// stop
 		cpu_int_table_handlers[core][2] = CreateEvent(NULL, TRUE, FALSE, NULL);
 		cpu_int_table_masked[core][2] = false;
-		cpu_int_table_routines[core][2] = do_start;
+		cpu_int_table_routines[core][2] = NULL;
 
-		//stop
+		// resume
 		cpu_int_table_handlers[core][3] = CreateEvent(NULL, TRUE, FALSE, NULL);
 		cpu_int_table_masked[core][3] = false;
-		cpu_int_table_routines[core][3] = do_stop;
+		cpu_int_table_routines[core][3] = NULL;
+
+		// suspend
+		cpu_int_table_handlers[core][4] = CreateEvent(NULL, TRUE, FALSE, NULL);
+		cpu_int_table_masked[core][4] = false;
+		cpu_int_table_routines[core][4] = NULL;
 
 		// initialize rest of them as masked
-		for (int i = 4; i < INTERRUPT_COUNT; i++)
+		for (int i = 5; i < INTERRUPT_COUNT; i++)
 		{
 			cpu_int_table_handlers[core][i] = CreateEvent(NULL, TRUE, FALSE, NULL);
 			cpu_int_table_masked[core][i] = true;

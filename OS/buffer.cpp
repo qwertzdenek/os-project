@@ -5,6 +5,7 @@
  * Created on Nov 10, 2015
  */
 
+#include "stdafx.h"
 #include "buffer.h"
 
 Buffer::Buffer() {
