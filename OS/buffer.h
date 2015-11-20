@@ -14,7 +14,7 @@ public:
 	Buffer();
 	virtual ~Buffer();
 
-	void add(int number) {
+	void add(double number) {
 		if (producerIndex == BUFFER_SIZE) {
 			producerIndex = 0;
 		}
@@ -22,7 +22,7 @@ public:
 		buffer[producerIndex++] = number;
 	}
 
-	int remove() {
+	double remove() {
 		if (consumerIndex == BUFFER_SIZE) {
 			consumerIndex = 0;
 		}
@@ -31,7 +31,7 @@ public:
 	}
 
 private:
-	int buffer[BUFFER_SIZE];
+	double buffer[BUFFER_SIZE];
 	int producerIndex;
 	int consumerIndex;
 };

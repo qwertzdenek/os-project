@@ -44,7 +44,9 @@ typedef struct {
 
 DWORD __stdcall task_main_consument(task_common_pointers *in);
 DWORD __stdcall task_main_producent(task_common_pointers *in);
-DWORD __stdcall task_main_runner();
+// lambda parameter should be used from remote controll to show correct synchronization of producer and consumer
+// Task should be somehow able to break the currently endless loop from outside
+DWORD __stdcall task_main_runner(double lambda);
 DWORD __stdcall task_main_idle(void *);
 
 // mapping from the task_type struct to pointers
