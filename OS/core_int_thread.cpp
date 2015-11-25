@@ -3,6 +3,7 @@
 #include "core_int_thread.h"
 
 #include "interrupts.h"
+#include "scheduler.h"
 
 // interrupt table
 bool cpu_int_table_masked[CORE_COUNT][INTERRUPT_COUNT];
@@ -57,6 +58,10 @@ void core_do_interrupt(void *entry_point, int core_number)
 	esp_push(&ctx.Esp, ctx.Ebp);
 	esp_push(&ctx.Esp, ctx.Esi);
 	esp_push(&ctx.Esp, ctx.Edi);
+
+	ctx.Esp = new_esp;
+
+	sched_store_context(core_number, ctx);
 
 	ctx.Eip = (DWORD32) entry_point;
 
