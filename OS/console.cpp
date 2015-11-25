@@ -6,13 +6,7 @@
 #include <iostream>
 #include <string>
 
-#include "console.h"
-#include "core.h"
-#include "core_int_thread.h"
-#include "sched_int_tick.h"
-#include "scheduler.h"
-
-bool running;
+#include "bootstrap.h"
 
 char *help()
 {
@@ -24,23 +18,6 @@ char *help()
 		"  Tomáš Cígler (drtikozel@gmail.com)\n"
 		"Usage:\n"
 		"  -h  show this message\n";
-}
-
-HANDLE get_main_thread_handle()
-{
-	HANDLE main_thread_handle = 0;
-
-	// get it
-	DuplicateHandle(GetCurrentProcess(),
-		GetCurrentThread(),
-		GetCurrentProcess(),
-		&main_thread_handle,
-		0,
-		TRUE,
-		DUPLICATE_SAME_ACCESS);
-
-	// return it
-	return main_thread_handle;
 }
 
 int main(int argc, char *argv[], char *envp[])
@@ -63,6 +40,9 @@ int main(int argc, char *argv[], char *envp[])
 
 	std::string input;
 
+	// boot up
+	hardware_start();
+
 	while (true)
 	{
 		
@@ -70,7 +50,7 @@ int main(int argc, char *argv[], char *envp[])
 		
 		if(input == "start")
 		{
-			start();
+			// TODO
 		}
 		else if(input == "help")
 		{
@@ -96,34 +76,7 @@ int main(int argc, char *argv[], char *envp[])
 		//std::cout << input;
 	}
 
-	
-
-	return 0;
-}
-
-void start()
-{
-	if (running)
-	{
-		std::cout << "SMP already running";
-	}
-	else 
-	{
-		DWORD thread_id;
-		HANDLE main_handle = (HANDLE)CreateThread(NULL, TASK_STACK_SIZE, start_smp, 0, 0, &thread_id);
-	}
-	
-}
-
-DWORD WINAPI start_smp(void *param)
-{
-	init_cpu_core(0);
-	init_cpu_core(1);
-	init_cpu_core(2);
-	init_cpu_core(3);
-	init_cpu_int_table();
-	init_scheduler();
-	sched_int_tick(get_main_thread_handle());
+	power_button();
 
 	return 0;
 }

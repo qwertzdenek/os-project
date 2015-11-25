@@ -33,9 +33,6 @@
     <ClInclude Include="sched_calls.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="sched_int_tick.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="cpu.h">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -51,7 +48,7 @@
     <ClInclude Include="buffer.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="console.h">
+    <ClInclude Include="bootstrap.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
@@ -68,9 +65,6 @@
     <ClCompile Include="core_int_thread.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="sched_int_tick.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="interrupts.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -84,6 +78,9 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="buffer.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="bootstrap.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

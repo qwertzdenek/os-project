@@ -49,7 +49,8 @@ void sched_end_task_callback()
 
 void sched_store_context(int core, CONTEXT ctx)
 {
-	running_tasks[core]->context = ctx;
+	if (running_tasks[core] != NULL)
+		running_tasks[core]->context = ctx;
 }
 
 // returns new task id
