@@ -2,10 +2,9 @@
 
 #include "cpu.h"
 
-extern HANDLE core_handle[];
+extern HANDLE core_handles[CORE_COUNT];
 
 void init_cpu_core(int core_number);
-void deinit_cpu_core();
 int actual_core();
 
 void esp_push(DWORD *esp, DWORD value);

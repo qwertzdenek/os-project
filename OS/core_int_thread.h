@@ -1,3 +1,3 @@
 #pragma once
 
-void init_cpu_int_table();
+DWORD WINAPI core_int_thread_entry(void *param);

@@ -4,8 +4,8 @@
 #include "core.h"
 #include "tasks.h"
 
-HANDLE core_handle[CORE_COUNT];
-DWORD  core_thread_id[CORE_COUNT];
+HANDLE core_handles[CORE_COUNT];
+DWORD core_thread_id[CORE_COUNT];
 
 int actual_core()
 {
@@ -21,8 +21,8 @@ int actual_core()
 void init_cpu_core(int core_number)
 {
 	DWORD thread_id;
-	core_handle[core_number] = (HANDLE)CreateThread(NULL, TASK_STACK_SIZE, task_main_idle, 0, CREATE_SUSPENDED, &thread_id);
-	SetThreadAffinityMask(core_handle[core_number], 0x1 << core_number);
+	core_handles[core_number] = (HANDLE)CreateThread(NULL, 0, task_main_idle, 0, CREATE_SUSPENDED, &thread_id);
+	SetThreadAffinityMask(core_handles[core_number], 0x1 << core_number);
 
 	core_thread_id[core_number] = thread_id;
 }
