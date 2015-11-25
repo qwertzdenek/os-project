@@ -78,15 +78,20 @@ int main(int argc, char *argv[], char *envp[])
 		}
 		else if (input == "stop")
 		{
-			//TODO
+			stop();
+		}
+		else if (input == "exit")
+		{
+			exit();
+			break;
 		}
 		else if (input.find("pause-thread") == 0)
 		{
-			//TODO
+			pause_thread(input);
 		}
 		else if (input.find("resume-thread") == 0)
 		{
-			//TODO
+			resume_thread(input);
 		}
 		else		
 		{
@@ -105,12 +110,13 @@ void start()
 {
 	if (running)
 	{
-		std::cout << "SMP already running";
+		std::cout << "SMP already running" << std::endl;
 	}
 	else 
 	{
 		DWORD thread_id;
 		HANDLE main_handle = (HANDLE)CreateThread(NULL, TASK_STACK_SIZE, start_smp, 0, 0, &thread_id);
+		std::cout << "SMP started" << std::endl;
 	}
 	
 }
@@ -126,4 +132,36 @@ DWORD WINAPI start_smp(void *param)
 	sched_int_tick(get_main_thread_handle());
 
 	return 0;
+}
+
+void stop()
+{
+	if (running)
+	{
+		// TODO stop smp
+		std::cout << "SMP stopped" << std::endl;
+	}
+	else
+	{
+		std::cout << "SMP not running - can't stop it" << std::endl;
+	}
+
+}
+
+void exit()
+{
+	if (running)
+	{
+		stop();
+	}
+}
+
+void pause_thread(std::string input)
+{
+	//TODO pause thread
+}
+
+void resume_thread(std::string input)
+{
+	//TODO resume thread
 }

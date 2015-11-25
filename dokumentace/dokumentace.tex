@@ -1,0 +1,276 @@
+\documentclass[a4paper,12pt]{article}
+
+% ===========================================================================================
+%	Balíčky
+% ===========================================================================================
+\usepackage[czech]{babel}		% nastavení češtiny (dělení slov, odstavce, nadpisy, datumy...)
+\usepackage[utf8x]{inputenc}		% nastavení vstupního kódování na UTF8
+\usepackage[T1]{fontenc}		% kodování fontu pro výsledný dokument
+
+\usepackage[pdftex]{graphicx}			% pro použití obrázků
+
+\usepackage{listings}	% pro podporu výpisů programu
+
+\usepackage{hyperref}
+
+\usepackage{xcolor}						% pro definování vlastních barev - lepší než color
+
+\usepackage{subcaption}					% pro více obrázků u sebe s jednou popiskou
+
+\graphicspath{ {./obrazky/} }
+
+\renewcommand{\lstlistingname}{Kód}
+
+
+
+\definecolor{bluekeywords}{rgb}{0.13,0.13,1}
+\definecolor{greencomments}{rgb}{0,0.5,0}
+\definecolor{redstrings}{rgb}{0.9,0,0}
+
+
+\lstdefinestyle{sharpc}{
+	language=[Sharp]C, 
+	tabsize=4,
+	keywordstyle=\color{blue}}
+
+\lstset{style=sharpc}
+
+
+
+% vycentrování obsahu všech floatů
+\makeatletter
+\g@addto@macro\@floatboxreset\centering
+\makeatother
+
+
+% ===========================================================================================
+%	Začátek dokumentu
+% ===========================================================================================
+\begin{document}
+
+% ===========================================================================================
+%	Titulní strana
+% ===========================================================================================
+\begin{titlepage}
+
+\sffamily	% odtud se píše bezpatkovým písmem
+
+	\begin{center}
+		\begin{Large}
+		
+		Západočeská univerzita v Plzni
+
+		\vspace*{0.2cm}
+		
+		Fakulta aplikovaných věd
+
+		\vspace*{0.2cm}
+		
+		Katedra informatiky a výpočetní techniky
+		
+		\vspace*{5mm}
+
+		% vložení loga ZČU	
+		\includegraphics[width=0.25\textwidth]{obrazky/logo_zcu}	
+		
+		\vspace*{2cm}
+		
+		% Název předmětu
+		{\Huge\bfseries Semestrální práce z předmětu Teorie kognitivních systémů}
+
+		\vspace*{1cm}
+		
+%		% Název úlohy
+		{\bfseries Analýza závislosti věku odchodu dětí ze skautské organizace na věku registrace}
+		\end{Large}
+	\end{center}
+	
+	% vyplní mezerami do konce stránky
+	\vfill
+
+	% vloží čáru o tloušťce 0,4 pt (tloušťka kartonu)
+	\hrule
+	
+	% neodsazovat první řádku kontaktu
+	\noindent
+	David Fiedler \\ 
+	david.fido.fiedler@gmail.com \\
+	A14N0111P \\
+	Plzeň, \number\day. \number\month. \number\year
+
+\rmfamily	% odtud se opět píše patkovým písmem
+
+\end{titlepage}
+
+\section{Zadání}
+Cílem práce je zjistit závislost věku odchodu dětí ze skautské organizace na věku registrace do skautské organizace. Skautskou organizací se zde rozumí Junák - Český skaut.
+
+Odchod dětských členů je v junáku dlouhodobý problém. Účelem práce je zjistit, zdali na odchodu členů v dětském věku má vliv brzký nástup - registrace do skautské organizace. 
+
+\section{Analýza}
+
+\subsection{Výběr metody}
+Jako metoda stanovení hypotézy byla vybrána lineární regrese. K výběru metody vedlo několik důvodů.
+
+Prvním důvodem byl malý počet testovacích dat. Bohužel, v době psaní aplikace zaslala skautská organizace pouze data za 28 oddíl Vločka za posledních 12 let, zhruba 600 záznamů. Navíc řada záznamů je duplicitních, zaznamenávají tutéž osobu ve vícero časových obdobích. Osob je tak v záznamech jen asi 300.
+
+Dalším důvodem byla předpokládaná hypotéza, neboť někteří činovníci organizace předložili názor, že nižší věk nastupujících členů znamená také nižší věk jejich odchodu z organizace. Úkolem práce tak bylo jejich (lineární) hypotézu potvrdit nebo vyvrátit.
+
+\subsection{Lineární regrese}
+K řešení byla vybrána standardní lineární regrese. K minimalizaci cenové funkce je použitá metoda gradientního sestupu.
+
+Vstupními daty je věk vstupu členů do skautské organizace. Výsledkem by měl být věk jejich odchodu. Jedna iterace gradientního sestupu se tak počítá jako:
+
+\begin{itemize}
+\item A = A - step * aTemp / size;
+\item B = B - step * bTemp / size;
+\end{itemize}
+
+Proměnné A a B jsou parametry lineární hypotézy. Parametr step určuje rychlost gradientního sestupu. Parametr size je velikost množiny dat. Dočasné proměnné se počítají takto:
+
+\begin{itemize}
+\item aTemp += (A * věk při registraci + B - věk odchodu) * věk při registraci;
+\item bTemp += (A * věk při registraci + B - věk odchodu);
+\end{itemize}
+
+
+
+\subsection{Vyřazení některých dat}
+Před vlastním výpočtem bylo třeba vyřadit některá data.
+
+Za prvé byli odstraněni všichni členové, kteří se registrovali dříve, než byla k dispozici elektronická databáze. Důvodem je to, že u nich není znám věk registrace do organizace.
+
+Dále byli vyřazeni členové, registrující se ve věku více než 15 let, neboť ti už nenáleží do kategorie dětských členů, a jsou pro výzkum nezajímaví.
+
+
+\section{Realizovaná aplikace}
+
+\subsection{Použité technologie}
+Aplikace byla napsána v programovacím jazyce C\#. Jako uživatelské rozhraní bylo využito frameworku WPF, který je standardní součástí .NET. Pro vykreslení grafu byla použita knihovna OxyPlot\cite{oxyplot}.
+
+\subsection{Struktura aplikace}
+Aplikace se skládá s uživatelského rozhraní, tříd pro načítání a transformaci dat, tříd pro vykreslení grafu, a tříd pro výpočet hypotézy metodou gradientního sestupu. Řídící třídou aplikace je třída \texttt{Programe}.
+
+\subsubsection{Uživatelské rozhraní}
+Uživatelské rozhraní je nejednoduší součástí aplikace. Je zpracováno v jediné třídě \texttt{MainWindow}. Uživatelské rozhraní je implementováno pomocí frameworku WPF.
+
+\subsubsection{Načítání a transformace dat}
+Data se do aplikace načítají ve formátu csv. K tomu slouží třída \texttt{DataLoader}. Ta uloží jednotlivé řádky ze souboru do objektů třídy \texttt{Row}.
+
+Následně se spustí transformace dat, tu řídí třída \texttt{DataTransformer}. Zde se převádí data z textové podoby na objekty vhodné ke zpracování aplikací. K tomu jsou využity třídy:
+
+\begin{itemize}
+\item \texttt{Record} - hlavní datový objekt
+\item \texttt{Category} - věková kategorie
+\item \texttt{Gender} - pohlaví
+\item \texttt{MemberType} - typ členství
+\item \texttt{Info} - datový objekt, zahrnující pouze informace použité k výpočtu gradientního sestupu
+\end{itemize}
+
+\subsubsection{Vykreslování grafu}
+K vykreslování grafu byla využita knihovna OxyPlot\cite{oxyplot}. K vykreslování slouží třída \texttt{Graph}.
+
+\subsubsection{Výpočet hypotézy metodou gradientního sestupu}
+Gradientní sestup je implementován ve třídě \texttt{GradientDescent}. Výpočet provádí metoda compute, kterou vidíme v kódu\ref{lst:descent}. 
+
+Provádí se zde standardní algoritmus gradientního sestupu, popsaný již v analytické části. Po každé iteraci se zavolá metoda pro aktualizaci grafu a počká se 500ms než začne další iterace.
+
+\begin{figure}
+\begin{lstlisting}[caption={Algoritmus gradientního sestupu},label=lst:descent]
+public async Task compute()
+{
+	int size = data.Length;
+	A = initValues[0];
+	B = initValues[1];
+	double aTemp, bTemp, aOld, bOld, diff;
+	int iteration = 0;
+	do
+	{
+    	iteration++;
+		aTemp = 0;
+		bTemp = 0;
+		foreach (Info info in data)
+		{
+			   
+			aTemp += (A * info.StartAge + B - info.QuitAge) 
+				* info.StartAge;
+			bTemp += (A * info.StartAge + B - info.QuitAge);
+		}
+
+        aOld = A;
+        bOld = B;
+		A = A - step * aTemp / size;
+		B = B - step * bTemp / size;
+
+		graph.printRegression(A, B, true, iteration);
+		graph.GraphModel.PlotView.InvalidatePlot();
+
+        diff = Math.Max(Math.Abs(A - aOld), Math.Abs(B - bOld));
+
+		await Task.Delay(500);
+
+    } while (!converged(iteration, diff));
+    graph.printRegression(A, B);
+}
+\end{lstlisting} 
+\end{figure}
+
+\section{Výsledky}
+Z výsledků výpočtu vyplývá, že hypotéza byla správná. Z vizualizace dat je jasné, že závislost věku příchodu a věku odchodu členů podléhá lineárnímu trendu odpovídajícímu hypotéze.
+
+Při použití 50\% dat jako testovacích je hypotéza prakticky shodná s použitím celé množiny dat na vytvoření hypotézy (viz obrázek~\ref{fig:vysedky} - křivky téměř splývají). I při použití pouhých 10\% dat na naučení algoritmu je hypotéza velmi podobná a jednoznačně potvrzuje závislost věku příchodu a věku odchodu členů - viz. obrázek~\ref{fig:vysedky}
+
+\begin{figure}[h!]
+\centering
+\includegraphics[width=1.0\linewidth]{vysledky.PNG}
+\caption{Výsledky}
+\label{fig:vysedky}
+\end{figure}
+
+
+\section{Uživatelská příručka}
+Nejprve je třeba vybrat soubor. Kliknutím na tlačítko \emph{Load Data} spustíme dialog pro výběr souboru a soubor vybereme. Je třeba vzít na vědomí že program pracuje pouze s daty ve formátu csv obsahujícími potřebné údaje.
+
+Následně se soubor s daty načte. Na záložce data vidíme tabulku s daty, tak jak je dodala skautská jednotka. Na záložce informace pak vidíme transformovaná data.
+
+Nejdůležitější je záložka graf. Zde se nacházejí výsledky výpočtu. Do grafu jsou dále doplněny věkové hranice dětských kategorií v Junáku.
+
+Ještě než spustíme výpočet, je možné nastavit parametry.  Za prvé je možné zvolit velikost testovací množiny v procentech. Dále je možné určit zastavovací podmínku a rychlost (velikost kroku) gradientního sestupu.
+
+Pro přesný výsledek je dobré nechat zastavovací podmínku nastavenou na 0.001, případně ji ještě zpřísnit (zmenšit).
+
+Velikost kroku gradientního sestupu by neměla přesáhnout 0.01, jinak sestup diverguje.
+
+Pak již spustíme výpočet tlačítkem \emph{Compute}.
+
+V grafu vidíme všechny hodnoty. Data použitá k naučení a testovací data jsou barevně odlišena. Vpravo nahoře se nachází legenda zobrazující mimo jiné počet proběhlých iterací.
+
+Celé rozhraní je vidět na obrázku~\ref{fig:application}
+
+\begin{figure}[h!]
+\centering
+\includegraphics[width=1.0\linewidth]{app.PNG}
+\caption{Okno aplikace}
+\label{fig:application}
+\end{figure}
+
+
+\section{Závěr}
+Práci se podařilo úspěšně dokončit. Zvolená metoda - lineární regrese se ukázala jako vhodná, neboť testovací data odpovídají vypočtené hypotéze. Navíc byl splněn účel práce neboť se přesvědčivě ukázal vztah věku příchodu a odchodu členů skautské organizace.
+
+\begin{thebibliography}{9}
+
+\bibitem[1]{Wikibooks}
+{\em Wikipedia contributors} \\
+{\bf "LaTex" Wikibooks - open book for an open world} \\
+\url{http://en.wikibooks.org/wiki/LaTeX} \\
+
+\bibitem[2]{oxyplot}
+{\em OxyPlot.org} \\
+{\bf OxyPlot - cross-platform plotting library for .NET.} \\
+\url{http://oxyplot.org/} \\
+
+\end{thebibliography}
+
+\end{document} 
+
