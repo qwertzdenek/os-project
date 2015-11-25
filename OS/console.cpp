@@ -4,12 +4,15 @@
 #include "stdafx.h"
 
 #include <iostream>
-#include <string.h>
+#include <string>
 
+#include "console.h"
 #include "core.h"
 #include "core_int_thread.h"
 #include "sched_int_tick.h"
 #include "scheduler.h"
+
+bool running;
 
 char *help()
 {
@@ -58,6 +61,62 @@ int main(int argc, char *argv[], char *envp[])
 		return 0;
 	}
 
+	std::string input;
+
+	while (true)
+	{
+		
+		std::cin >> input;
+		
+		if(input == "start")
+		{
+			start();
+		}
+		else if(input == "help")
+		{
+			std::cout << help() << std::endl;
+		}
+		else if (input == "stop")
+		{
+			//TODO
+		}
+		else if (input.find("pause-thread") == 0)
+		{
+			//TODO
+		}
+		else if (input.find("resume-thread") == 0)
+		{
+			//TODO
+		}
+		else		
+		{
+			std::cout << "Unknown command" << std::endl;
+		}
+
+		//std::cout << input;
+	}
+
+	
+
+	return 0;
+}
+
+void start()
+{
+	if (running)
+	{
+		std::cout << "SMP already running";
+	}
+	else 
+	{
+		DWORD thread_id;
+		HANDLE main_handle = (HANDLE)CreateThread(NULL, TASK_STACK_SIZE, start_smp, 0, 0, &thread_id);
+	}
+	
+}
+
+DWORD WINAPI start_smp(void *param)
+{
 	init_cpu_core(0);
 	init_cpu_core(1);
 	init_cpu_core(2);
