@@ -181,14 +181,14 @@ DWORD __stdcall scheduler_run()
 		{
 			new_task = std::move(task_queue.front());
 			task_queue.pop();
+
+			new_task->state = RUNNING;
+
+			context_changed[core] = true;
+			target_contexts[core] = new_task->context;
+
+			running_tasks[core] = std::move(new_task);
 		}
-
-		new_task->state = RUNNING;
-
-		context_changed[core] = true;
-		target_contexts[core] = new_task->context;
-
-		running_tasks[core] = std::move(new_task);
 	}
 
 	// send final reschedule events to the other cores

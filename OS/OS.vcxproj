@@ -140,6 +140,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClInclude Include="buffer.h" />
+    <ClInclude Include="console.h" />
     <ClInclude Include="core.h" />
     <ClInclude Include="core_int_thread.h" />
     <ClInclude Include="cpu.h" />
