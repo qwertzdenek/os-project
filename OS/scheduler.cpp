@@ -1,5 +1,7 @@
 #include "stdafx.h"
 
+#include <iostream>
+
 #include "scheduler.h"
 #include "tasks.h"
 #include "core.h"
@@ -43,7 +45,11 @@ void sched_end_task_callback()
 		cpu_int_table_messages[core][1] = (void *)next_task->context.Esp;
 		SetEvent(cpu_int_table_handlers[core][1]);
 	}
+}
 
+void sched_store_context(int core, CONTEXT ctx)
+{
+	running_tasks[core]->context = ctx;
 }
 
 // returns new task id
@@ -97,15 +103,18 @@ void sched_create_task(task_control_block &tcb, new_task_req &req)
 	tcb.type = req.type;
 }
 
-DWORD scheduler_run()
+DWORD __stdcall scheduler_run()
 {
 	CONTEXT target_contexts[CORE_COUNT];
 	bool context_changed[CORE_COUNT];
 	memset(&context_changed, 0, CORE_COUNT * sizeof(bool));
 
+	std::cout << "scheduler_run" << std::endl;
+
 	// clean up exited tasks
 	while (!exit_task_queue.empty())
 	{
+		// TODO:
 		exit_task_queue.pop();
 	}
 
@@ -126,6 +135,7 @@ DWORD scheduler_run()
 		std::unique_ptr<task_control_block> current_task(std::move(running_tasks[core]));
 
 		target_contexts[core] = default_context;
+		context_changed[core] = true;
 
 		// if something is on the core
 		if (current_task.get() != NULL)
@@ -139,6 +149,8 @@ DWORD scheduler_run()
 			}
 			else
 			{
+				target_contexts[core] = current_task->context;
+				running_tasks[core] = std::move(current_task);
 				context_changed[core] = false;
 				continue;
 			}
@@ -159,8 +171,10 @@ DWORD scheduler_run()
 			}
 			else
 			{
+				// stop 
 				SetEvent(cpu_int_table_handlers[core][3]);
-				running_tasks[core].release();
+				context_changed[core] = false;
+				continue;
 			}
 		}
 		else
@@ -195,7 +209,7 @@ void init_scheduler()
 	memset(&default_context, 0, sizeof(default_context));
 	HANDLE CPUCore = (HANDLE)CreateThread(NULL, 0, task_main_idle, 0, CREATE_SUSPENDED, NULL);
 
-	default_context.ContextFlags = CONTEXT_ALL;
+	default_context.ContextFlags = CONTEXT_FULL;
 	GetThreadContext(CPUCore, &default_context);
 
 	// initialize first idle task on first core
@@ -209,4 +223,6 @@ void init_scheduler()
 	sched_create_task(*tcb, task_request);
 	tcb->quantum = 0;
 	running_tasks[0] = std::move(tcb);
+
+	SetEvent(cpu_int_table_handlers[0][3]);
 }

@@ -18,18 +18,10 @@ int actual_core()
 	return 0;
 }
 
-DWORD WINAPI init_cpu_idle_task(void *param)
-{
-	while (true)
-		;
-
-	return 0;
-}
-
 void init_cpu_core(int core_number)
 {
 	DWORD thread_id;
-	core_handle[core_number] = (HANDLE)CreateThread(NULL, TASK_STACK_SIZE, init_cpu_idle_task, 0, 0, &thread_id);
+	core_handle[core_number] = (HANDLE)CreateThread(NULL, TASK_STACK_SIZE, task_main_idle, 0, CREATE_SUSPENDED, &thread_id);
 	SetThreadAffinityMask(core_handle[core_number], 0x1 << core_number);
 
 	core_thread_id[core_number] = thread_id;
