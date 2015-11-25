@@ -7,6 +7,8 @@
 #include <string>
 
 #include "bootstrap.h"
+#include "sched_calls.h"
+#include "cpu.h"
 
 char *help()
 {
@@ -38,42 +40,53 @@ int main(int argc, char *argv[], char *envp[])
 		return 0;
 	}
 
+	std::cout << "KIV/OS Scheduler project" << std::endl;
+
+	bool running = true;
+
 	std::string input;
+	int number;
 
 	// boot up
 	hardware_start();
 
-	while (true)
+	while (running)
 	{
-		
 		std::cin >> input;
-		
-		if(input == "start")
+		std::transform(input.begin(), input.end(), input.begin(), ::tolower);
+
+		if (input == "close")
 		{
-			// TODO
+			running = false;
 		}
-		else if(input == "help")
+		else if (input == "start")
+		{
+			exec_task(RUNNER, NULL);
+		}
+		else if (input == "help")
 		{
 			std::cout << help() << std::endl;
 		}
-		else if (input == "stop")
+		else if (input == "pause-core")
 		{
-			//TODO
+			std::cout << "> ";
+			std::cin >> number;
+
+			// call interrupt
+			cpu_int_table_messages[number][4];
 		}
-		else if (input.find("pause-thread") == 0)
+		else if (input == "resume-thread")
 		{
-			//TODO
+			std::cout << "> ";
+			std::cin >> number;
+
+			// call interrupt
+			cpu_int_table_messages[number][3];
 		}
-		else if (input.find("resume-thread") == 0)
-		{
-			//TODO
-		}
-		else		
+		else
 		{
 			std::cout << "Unknown command" << std::endl;
 		}
-
-		//std::cout << input;
 	}
 
 	power_button();

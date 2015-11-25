@@ -12,7 +12,7 @@ DWORD __stdcall task_main_idle(void *)
 		;
 }
 
-DWORD __stdcall task_main_runner()
+DWORD __stdcall task_main_runner(void *in)
 {
 	// init common memory and call exec_task
 	task_common_pointers *struct_ptr = new task_common_pointers;
@@ -28,7 +28,7 @@ DWORD __stdcall task_main_runner()
 	return 0;
 }
 
-DWORD __stdcall task_main_producent(task_common_pointers *in)
+DWORD __stdcall task_main_producent(void *in)
 {
 	// do something
 
@@ -36,7 +36,7 @@ DWORD __stdcall task_main_producent(task_common_pointers *in)
 	return 0;
 }
 
-DWORD __stdcall task_main_consument(task_common_pointers *in)
+DWORD __stdcall task_main_consument(void *in)
 {
 	// do something
 

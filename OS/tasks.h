@@ -42,9 +42,9 @@ typedef struct {
 	std::unique_ptr<task_common_pointers> tcp;
 } new_task_req;
 
-DWORD __stdcall task_main_consument(task_common_pointers *in);
-DWORD __stdcall task_main_producent(task_common_pointers *in);
-DWORD __stdcall task_main_runner();
+DWORD __stdcall task_main_consument(void *);
+DWORD __stdcall task_main_producent(void *);
+DWORD __stdcall task_main_runner(void *);
 DWORD __stdcall task_main_idle(void *);
 
 // mapping from the task_type struct to pointers

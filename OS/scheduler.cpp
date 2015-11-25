@@ -1,7 +1,5 @@
 #include "stdafx.h"
 
-#include <iostream>
-
 #include "scheduler.h"
 #include "tasks.h"
 #include "core.h"
@@ -56,13 +54,15 @@ void sched_store_context(int core, CONTEXT ctx)
 // returns new task id
 int sched_request_task(task_type type, task_common_pointers *data)
 {
+	int task_id;
 	std::unique_ptr<new_task_req> request(new new_task_req);
 	request->tcp.reset(data);
 	request->type = type;
 	request->task_id = task_counter++;
+	task_id = request->task_id;
 	new_task_queue.push(std::move(request));
 
-	return request->task_id;
+	return task_id;
 }
 
 void sched_request_exit(int core_number)
@@ -109,8 +109,6 @@ DWORD __stdcall scheduler_run()
 	CONTEXT target_contexts[CORE_COUNT];
 	bool context_changed[CORE_COUNT];
 	memset(&context_changed, 0, CORE_COUNT * sizeof(bool));
-
-	std::cout << "scheduler_run" << std::endl;
 
 	// clean up exited tasks
 	while (!exit_task_queue.empty())
