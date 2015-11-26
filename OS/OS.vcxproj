@@ -153,7 +153,6 @@
     <ClInclude Include="tasks.h" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="buffer.cpp" />
     <ClCompile Include="console.cpp" />
     <ClCompile Include="core.cpp" />
     <ClCompile Include="core_int_thread.cpp" />

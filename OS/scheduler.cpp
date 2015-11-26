@@ -3,6 +3,7 @@
 #include "scheduler.h"
 #include "tasks.h"
 #include "core.h"
+#include "interrupts.h"
 
 #define TIME_QUANTUM 100
 #define TIME_QUANTUM_DECREASE 25
@@ -41,14 +42,18 @@ void sched_end_task_callback()
 		task_queue.pop();
 
 		cpu_int_table_messages[core][1] = (void *)next_task->context.Esp;
-		SetEvent(cpu_int_table_handlers[core][1]);
+		do_reschedule();
 	}
 }
 
 void sched_store_context(int core, CONTEXT ctx)
 {
-	if (running_tasks[core] != NULL)
-		running_tasks[core]->context = ctx;
+	running_tasks[core]->context = ctx;
+}
+
+bool sched_active_task(int core)
+{
+	return running_tasks[core] != NULL;
 }
 
 // returns new task id
@@ -113,7 +118,6 @@ DWORD __stdcall scheduler_run()
 	// clean up exited tasks
 	while (!exit_task_queue.empty())
 	{
-		// TODO:
 		exit_task_queue.pop();
 	}
 

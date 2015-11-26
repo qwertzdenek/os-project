@@ -25,6 +25,7 @@ DWORD __stdcall task_main_runner(void *in)
 
 	struct_ptr->empty._value = ATOMIC_VAR_INIT(BUFFER_SIZE);
 	struct_ptr->mutex._value = ATOMIC_VAR_INIT(1);
+	struct_ptr->full._value = ATOMIC_VAR_INIT(0);
 
 	int prod_id = exec_task(PRODUCENT, struct_ptr);
 	int cons_id = exec_task(CONSUMENT, struct_ptr);

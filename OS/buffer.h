@@ -11,8 +11,8 @@
 
 class Buffer {
 public:
-	Buffer();
-	virtual ~Buffer();
+	Buffer() : producerIndex(0), consumerIndex(0) {} ;
+	~Buffer() {};
 
 	void add(double number) {
 		if (producerIndex == BUFFER_SIZE) {

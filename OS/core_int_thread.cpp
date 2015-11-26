@@ -24,27 +24,28 @@ void core_do_interrupt(void *entry_point, int core_number)
 	SuspendThread(target_core);
 	GetThreadContext(target_core, &ctx);
 	
-	// push return address on task stack
-	// set interrupt handler on the cpu core
-	ctx.Esp -= sizeof(DWORD32);
-	*(DWORD32 *)ctx.Esp = ctx.Eip;
+	if (sched_active_task(core_number))
+	{
+		// push return address on task stack
+		// set interrupt handler on the cpu core
+		ctx.Esp -= sizeof(DWORD32);
+		*(DWORD32 *)ctx.Esp = ctx.Eip;
 
-	// store flags and general registers on stack here
-	esp_push(&ctx.Esp, ctx.ContextFlags);
-	// push dummy registers
-	esp_push(&ctx.Esp, ctx.Eax);
-	esp_push(&ctx.Esp, ctx.Ecx);
-	esp_push(&ctx.Esp, ctx.Edx);
-	esp_push(&ctx.Esp, ctx.Ebx);
-	DWORD new_esp = ctx.Esp - 4 * sizeof(DWORD);
-	esp_push(&ctx.Esp, new_esp);
-	esp_push(&ctx.Esp, ctx.Ebp);
-	esp_push(&ctx.Esp, ctx.Esi);
-	esp_push(&ctx.Esp, ctx.Edi);
+		// store flags and general registers on stack here
+		esp_push(&ctx.Esp, ctx.ContextFlags);
+		// push dummy registers
+		esp_push(&ctx.Esp, ctx.Eax);
+		esp_push(&ctx.Esp, ctx.Ecx);
+		esp_push(&ctx.Esp, ctx.Edx);
+		esp_push(&ctx.Esp, ctx.Ebx);
+		DWORD new_esp = ctx.Esp - 4 * sizeof(DWORD);
+		esp_push(&ctx.Esp, new_esp);
+		esp_push(&ctx.Esp, ctx.Ebp);
+		esp_push(&ctx.Esp, ctx.Esi);
+		esp_push(&ctx.Esp, ctx.Edi);
 
-	ctx.Esp = new_esp;
-
-	sched_store_context(core_number, ctx);
+		sched_store_context(core_number, ctx);
+	}
 
 	ctx.Eip = (DWORD32) entry_point;
 

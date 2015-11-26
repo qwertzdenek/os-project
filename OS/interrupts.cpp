@@ -30,7 +30,7 @@ __declspec(naked) void do_reschedule()
 		mov eax, 4; pointer is 4 bytes
 		mov ebx, INTERRUPT_COUNT
 		mul ebx
-		mov eax, ecx    ; core number
+		mov ebx, ecx    ; core number
 		mul ebx
 		lea ebx, cpu_int_table_messages[eax + 4]
 		mov esp, dword ptr [ebx]

@@ -77,9 +77,6 @@
     <ClCompile Include="tasks.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="buffer.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="bootstrap.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
