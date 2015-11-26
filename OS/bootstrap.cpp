@@ -18,29 +18,29 @@ void cpu_init()
 	for (int core = 0; core < CORE_COUNT; core++)
 	{
 		// schedule
-		cpu_int_table_handlers[core][0] = CreateEvent(NULL, TRUE, FALSE, NULL);
-		cpu_int_table_masked[core][0] = core == 0 ? false : true;
-		cpu_int_table_routines[core][0] = do_schedule;
+		cpu_int_table_handlers[core][INT_SCHEDULER] = CreateEvent(NULL, TRUE, FALSE, NULL);
+		cpu_int_table_masked[core][INT_SCHEDULER] = core == 0 ? false : true;
+		cpu_int_table_routines[core][INT_SCHEDULER] = do_schedule;
 
 		// reschedule
-		cpu_int_table_handlers[core][1] = CreateEvent(NULL, TRUE, FALSE, NULL);
-		cpu_int_table_masked[core][1] = false;
-		cpu_int_table_routines[core][1] = do_reschedule;
+		cpu_int_table_handlers[core][INT_RESCHEDULE] = CreateEvent(NULL, TRUE, FALSE, NULL);
+		cpu_int_table_masked[core][INT_RESCHEDULE] = false;
+		cpu_int_table_routines[core][INT_RESCHEDULE] = do_reschedule;
 
 		// stop
-		cpu_int_table_handlers[core][2] = CreateEvent(NULL, TRUE, FALSE, NULL);
-		cpu_int_table_masked[core][2] = false;
-		cpu_int_table_routines[core][2] = NULL;
+		cpu_int_table_handlers[core][INT_CORE_TERM] = CreateEvent(NULL, TRUE, FALSE, NULL);
+		cpu_int_table_masked[core][INT_CORE_TERM] = false;
+		cpu_int_table_routines[core][INT_CORE_TERM] = NULL;
 
 		// resume
-		cpu_int_table_handlers[core][3] = CreateEvent(NULL, TRUE, FALSE, NULL);
-		cpu_int_table_masked[core][3] = false;
-		cpu_int_table_routines[core][3] = NULL;
+		cpu_int_table_handlers[core][INT_CORE_RESUME] = CreateEvent(NULL, TRUE, FALSE, NULL);
+		cpu_int_table_masked[core][INT_CORE_RESUME] = false;
+		cpu_int_table_routines[core][INT_CORE_RESUME] = NULL;
 
 		// suspend
-		cpu_int_table_handlers[core][4] = CreateEvent(NULL, TRUE, FALSE, NULL);
-		cpu_int_table_masked[core][4] = false;
-		cpu_int_table_routines[core][4] = NULL;
+		cpu_int_table_handlers[core][INT_CORE_SUSPEND] = CreateEvent(NULL, TRUE, FALSE, NULL);
+		cpu_int_table_masked[core][INT_CORE_SUSPEND] = false;
+		cpu_int_table_routines[core][INT_CORE_SUSPEND] = NULL;
 
 		// initialize rest of them as masked
 		for (int i = 5; i < INTERRUPT_COUNT; i++)
@@ -60,7 +60,7 @@ void cpu_stop()
 	for (int core = 0; core < CORE_COUNT; core++)
 	{
 		// stop it and wait
-		SetEvent(cpu_int_table_handlers[core][2]);
+		SetEvent(cpu_int_table_handlers[core][INT_CORE_TERM]);
 		WaitForSingleObject(core_int_handles[core], INFINITE);
 
 		for (int i = 0; i < INTERRUPT_COUNT; i++)
@@ -78,7 +78,7 @@ DWORD __stdcall hardware_entry(void *)
 
 	while (WaitForSingleObject(power_button_event, 500) != WAIT_OBJECT_0)
 	{
-		SetEvent(cpu_int_table_handlers[0][0]);
+		SetEvent(cpu_int_table_handlers[0][INT_SCHEDULER]);
 	}
 
 	cpu_stop();

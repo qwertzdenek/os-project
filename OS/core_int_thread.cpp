@@ -74,18 +74,18 @@ DWORD WINAPI core_int_thread_entry(void *param)
 			continue;
 
 		switch (num) {
-		case 0:
-		case 1:
+		case INT_SCHEDULER:
+		case INT_RESCHEDULE:
 			core_do_interrupt(cpu_int_table_routines[core_number][num], core_number);
 			break;
-		case 2:
+		case INT_CORE_TERM:
 			int_thread_running[core_number] = false;
 			TerminateThread(core_handles[core_number], 0);
 			break;
-		case 3:
+		case INT_CORE_RESUME:
 			ResumeThread(core_handles[core_number]);
 			break;
-		case 4:
+		case INT_CORE_SUSPEND:
 			SuspendThread(core_handles[core_number]);
 			break;
 		}

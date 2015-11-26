@@ -33,7 +33,7 @@ void sched_end_task_callback()
 		running_tasks[core].release();
 
 		// interrupt scheduler
-		SetEvent(cpu_int_table_handlers[0][0]);
+		SetEvent(cpu_int_table_handlers[0][INT_SCHEDULER]);
 		SuspendThread(GetCurrentThread());
 	}
 	else
@@ -175,7 +175,7 @@ DWORD __stdcall scheduler_run()
 			else
 			{
 				// stop 
-				SetEvent(cpu_int_table_handlers[core][3]);
+				SetEvent(cpu_int_table_handlers[core][INT_CORE_SUSPEND]);
 				context_changed[core] = false;
 				continue;
 			}
@@ -200,7 +200,7 @@ DWORD __stdcall scheduler_run()
 		if (context_changed[core])
 		{
 			cpu_int_table_messages[core][1] = (void *)target_contexts[core].Esp;
-			SetEvent(cpu_int_table_handlers[core][1]);
+			SetEvent(cpu_int_table_handlers[core][INT_RESCHEDULE]);
 		}
 	}
 
@@ -227,5 +227,5 @@ void init_scheduler()
 	tcb->quantum = 0;
 	running_tasks[0] = std::move(tcb);
 
-	SetEvent(cpu_int_table_handlers[0][3]);
+	SetEvent(cpu_int_table_handlers[0][INT_CORE_RESUME]);
 }
