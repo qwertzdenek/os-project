@@ -9,6 +9,7 @@
 #include "bootstrap.h"
 #include "sched_calls.h"
 #include "cpu.h"
+#include "scheduler.h"
 
 char *help()
 {
@@ -77,6 +78,25 @@ int main(int argc, char *argv[], char *envp[])
 		else if (input == "help")
 		{
 			std::cout << help() << std::endl;
+		}
+		else if (input == "show")
+		{
+			std::cout << "Task in front:" << std::endl;
+			std::cout << "id state type" << std::endl;
+			for (int i = 0; i < task_queue.size(); i++)
+			{
+				std::cout << task_queue[i]->task_id << " " << task_queue[i]->state << "" << task_queue[i]->type << std::endl;
+			}
+			std::cout << std::endl;
+			std::cout << "Running tasks:" << std::endl;
+			std::cout << "id state type" << std::endl;
+			for (int i = 0; i < CORE_COUNT; i++)
+			{
+				if (running_tasks[i] != NULL)
+				{
+					std::cout << running_tasks[i]->task_id << " " << running_tasks[i]->state << "" << running_tasks[i]->type << std::endl;
+				}
+			}
 		}
 		else if (input == "pause-core")
 		{

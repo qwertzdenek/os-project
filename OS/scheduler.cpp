@@ -12,7 +12,7 @@
 std::unique_ptr<task_control_block> running_tasks[CORE_COUNT];
 
 // main task queue
-std::queue<std::unique_ptr<task_control_block>> task_queue;
+std::deque<std::unique_ptr<task_control_block>> task_queue;
 
 // new task queue
 std::queue<std::unique_ptr<new_task_req>> new_task_queue;
@@ -41,7 +41,7 @@ void sched_end_task_callback()
 	else
 	{
 		std::unique_ptr<task_control_block> next_task(std::move(task_queue.front()));
-		task_queue.pop();
+		task_queue.pop_front();
 
 		cpu_int_table_messages[core][1] = (void *)next_task->context.Esp;
 		do_reschedule();
@@ -131,7 +131,7 @@ DWORD __stdcall scheduler_run()
 
 		std::unique_ptr<task_control_block> tcb(new task_control_block);
 		sched_create_task(*tcb, *task_request);
-		task_queue.push(std::move(tcb));
+		task_queue.push_back(std::move(tcb));
 	}
 
 	for (int core = 0; core < CORE_COUNT; core++)
@@ -154,7 +154,7 @@ DWORD __stdcall scheduler_run()
 			{
 				current_task->quantum = TIME_QUANTUM;
 				current_task->state = RUNNABLE;
-				task_queue.push(std::move(current_task));
+				task_queue.push_back(std::move(current_task));
 			}
 			else
 			{
@@ -189,7 +189,7 @@ DWORD __stdcall scheduler_run()
 		else
 		{
 			new_task = std::move(task_queue.front());
-			task_queue.pop();
+			task_queue.pop_front();
 		}
 
 		new_task->state = RUNNING;
