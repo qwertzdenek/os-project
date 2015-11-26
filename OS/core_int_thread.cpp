@@ -50,7 +50,8 @@ void core_do_interrupt(void *entry_point, int core_number)
 	ctx.Eip = (DWORD32) entry_point;
 
 	SetThreadContext(target_core, &ctx);
-	ResumeThread(target_core);
+	while (ResumeThread(target_core))
+		;
 }
 
 DWORD WINAPI core_int_thread_entry(void *param)
@@ -83,7 +84,8 @@ DWORD WINAPI core_int_thread_entry(void *param)
 			TerminateThread(core_handles[core_number], 0);
 			break;
 		case INT_CORE_RESUME:
-			ResumeThread(core_handles[core_number]);
+			while (ResumeThread(core_handles[core_number]))
+				;
 			break;
 		case INT_CORE_SUSPEND:
 			SuspendThread(core_handles[core_number]);
