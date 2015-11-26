@@ -24,6 +24,8 @@ unsigned long tick_count = 0;
 int task_counter = 0;
 CONTEXT default_context;
 
+bool core_paused[CORE_COUNT];
+
 void sched_end_task_callback()
 {
 	int core = actual_core();
@@ -134,6 +136,10 @@ DWORD __stdcall scheduler_run()
 
 	for (int core = 0; core < CORE_COUNT; core++)
 	{
+		if (core_paused[core])
+		{
+			continue;
+		}
 		std::unique_ptr<task_control_block> new_task;
 		std::unique_ptr<task_control_block> current_task(std::move(running_tasks[core]));
 

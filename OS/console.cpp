@@ -50,7 +50,7 @@ int main(int argc, char *argv[], char *envp[])
 	// boot up
 	hardware_start();
 
-	Sleep(200);
+	/*Sleep(200);
 
 	exec_task(RUNNER, NULL);
 	exec_task(RUNNER, NULL);
@@ -59,7 +59,7 @@ int main(int argc, char *argv[], char *envp[])
 	exec_task(RUNNER, NULL);
 	exec_task(RUNNER, NULL);
 	exec_task(RUNNER, NULL);
-	exec_task(RUNNER, NULL);
+	exec_task(RUNNER, NULL);*/
 
 	while (running)
 	{
@@ -84,15 +84,55 @@ int main(int argc, char *argv[], char *envp[])
 			std::cin >> number;
 
 			// call interrupt
-			cpu_int_table_messages[number][4];
+			if (number >= 0 && number <= CORE_COUNT)
+			{
+				if (number == 0)
+				{
+					std::cout << "Core 0 cannot be paused" << std::endl;
+				}
+				else 
+				{
+					if (core_paused[number])
+					{
+						std::cout << "Core already paused" << std::endl;
+					}
+					else
+					{
+						core_paused[number] = true;
+						cpu_int_table_messages[number][4];
+						std::cout << "Core paused" << std::endl;
+					}
+				}
+			}
+			else
+			{
+				std::cout << "Wrong core number" << std::endl;
+			}
+			
 		}
-		else if (input == "resume-thread")
+		else if (input == "resume-core")
 		{
 			std::cout << "> ";
 			std::cin >> number;
 
 			// call interrupt
-			cpu_int_table_messages[number][3];
+			if (number >= 0 && number <= CORE_COUNT)
+			{
+				if (core_paused[number])
+				{
+					core_paused[number] = false;
+					cpu_int_table_messages[number][3];
+					std::cout << "Core resumed" << std::endl;
+				}
+				else
+				{
+					std::cout << "Core is not paused, cannot be resumed" << std::endl;
+				}
+			}
+			else
+			{
+				std::cout << "Wrong core number" << std::endl;
+			}
 		}
 		else
 		{
