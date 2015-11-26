@@ -11,10 +11,10 @@ __declspec(naked) void do_schedule()
 		call scheduler_run
 		mov esp, eax
 
-		; pop flags
+		; pop general registers
 		popad
 
-		; pop general registers
+		; pop flags
 		popfd
 
 		ret

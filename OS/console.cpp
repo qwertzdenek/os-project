@@ -50,6 +50,17 @@ int main(int argc, char *argv[], char *envp[])
 	// boot up
 	hardware_start();
 
+	Sleep(200);
+
+	exec_task(RUNNER, NULL);
+	exec_task(RUNNER, NULL);
+	exec_task(RUNNER, NULL);
+	exec_task(RUNNER, NULL);
+	exec_task(RUNNER, NULL);
+	exec_task(RUNNER, NULL);
+	exec_task(RUNNER, NULL);
+	exec_task(RUNNER, NULL);
+
 	while (running)
 	{
 		std::cin >> input;

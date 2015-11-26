@@ -32,7 +32,7 @@ typedef struct
 	semaphore_t full;
 	semaphore_t empty;
 	semaphore_t mutex;
-	
+
 	Buffer buffer;
 } task_common_pointers;
 
