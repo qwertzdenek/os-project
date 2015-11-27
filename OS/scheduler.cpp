@@ -1,12 +1,15 @@
 #include "stdafx.h"
 
+#include <memory>
 #include <mutex>
+#include <deque>
+#include <list>
 
 #include "scheduler.h"
 #include "tasks.h"
 #include "core.h"
 #include "interrupts.h"
-#include "sched_calls.h"
+
 
 #define TIME_QUANTUM 100
 #define TIME_QUANTUM_DECREASE 25
@@ -15,13 +18,13 @@
 std::unique_ptr<task_control_block> running_tasks[CORE_COUNT];
 
 // main task queue
-std::queue<std::unique_ptr<task_control_block>> task_queue;
+std::deque<std::unique_ptr<task_control_block>> task_queue;
 
 // new task queue
-std::queue<std::unique_ptr<new_task_req>> new_task_queue;
+std::list<new_task_req *> new_task_queue;
 
 // exit task requests queue
-std::queue<std::unique_ptr<task_control_block>> exit_task_queue;
+std::deque<std::unique_ptr<task_control_block>> exit_task_queue;
 
 semaphore_t sched_lock;
 
@@ -34,7 +37,7 @@ void sched_end_task_callback()
 	int core = actual_core();
 
 	semaphore_P(sched_lock, 1);
-	exit_task_queue.push(std::move(running_tasks[core]));
+	exit_task_queue.push_back(std::move(running_tasks[core]));
 
 	if (task_queue.empty())
 	{
@@ -46,7 +49,7 @@ void sched_end_task_callback()
 	else
 	{
 		std::unique_ptr<task_control_block> next_task(std::move(task_queue.front()));
-		task_queue.pop();
+		task_queue.pop_front();
 
 		cpu_int_table_messages[core][1] = (void *)next_task->context.Esp;
 
@@ -71,15 +74,18 @@ bool sched_active_task(int core)
 int sched_request_task(task_type type, task_common_pointers *data)
 {
 	int task_id;
+	new_task_req * request;
+	semaphore_P(sched_lock, 1);
 
-	std::unique_ptr<new_task_req> request(new new_task_req);
+	request = new new_task_req;
+
 	request->tcp.reset(data);
 	request->type = type;
 	request->task_id = task_counter++;
 	task_id = request->task_id;
 
-	semaphore_P(sched_lock, 1);
-	new_task_queue.push(std::move(request));
+	
+	new_task_queue.push_back(request);
 	semaphore_V(sched_lock, 1);
 
 	return task_id;
@@ -128,18 +134,18 @@ DWORD __stdcall scheduler_run()
 	// clean up exited tasks
 	while (!exit_task_queue.empty())
 	{
-		exit_task_queue.pop();
+		exit_task_queue.pop_front();
 	}
 
 	// check for new tasks
 	while (!new_task_queue.empty())
 	{
-		std::unique_ptr<new_task_req> task_request(std::move(new_task_queue.front()));
-		new_task_queue.pop();
+		std::unique_ptr<new_task_req> task_request(new_task_queue.front());
+		new_task_queue.pop_front();
 
 		std::unique_ptr<task_control_block> tcb(new task_control_block);
 		sched_create_task(*tcb, *task_request);
-		task_queue.push(std::move(tcb));
+		task_queue.push_back(std::move(tcb));
 	}
 
 	for (int core = 0; core < CORE_COUNT; core++)
@@ -158,7 +164,7 @@ DWORD __stdcall scheduler_run()
 			{
 				current_task->quantum = TIME_QUANTUM;
 				current_task->state = RUNNABLE;
-				task_queue.push(std::move(current_task));
+				task_queue.push_back(std::move(current_task));
 			}
 			else
 			{
@@ -193,7 +199,7 @@ DWORD __stdcall scheduler_run()
 		else
 		{
 			new_task = std::move(task_queue.front());
-			task_queue.pop();
+			task_queue.pop_front();
 		}
 
 		new_task->state = RUNNING;

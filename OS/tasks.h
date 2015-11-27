@@ -2,8 +2,8 @@
 
 #include <array>
 #include <memory>
-#include "sched.h"
 #include "buffer.h"
+#include "synchro.h"
 
 #define TASK_STACK_SIZE 1024
 

@@ -54,12 +54,6 @@ int main(int argc, char *argv[], char *envp[])
 
 	exec_task(RUNNER, NULL);
 	exec_task(RUNNER, NULL);
-	exec_task(RUNNER, NULL);
-	exec_task(RUNNER, NULL);
-	exec_task(RUNNER, NULL);
-	exec_task(RUNNER, NULL);
-	exec_task(RUNNER, NULL);
-	exec_task(RUNNER, NULL);
 
 	while (running)
 	{
