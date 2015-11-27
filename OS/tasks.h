@@ -18,7 +18,7 @@ typedef enum {
 typedef struct task_control_block_inner {
 	void* stack;
 	CONTEXT context;
-	int task_id;
+	uint32_t task_id;
 	int quantum;
 	task_state state;
 	task_type type;

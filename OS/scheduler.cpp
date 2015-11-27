@@ -1,9 +1,12 @@
 #include "stdafx.h"
 
+#include <mutex>
+
 #include "scheduler.h"
 #include "tasks.h"
 #include "core.h"
 #include "interrupts.h"
+#include "sched_calls.h"
 
 #define TIME_QUANTUM 100
 #define TIME_QUANTUM_DECREASE 25
@@ -20,8 +23,10 @@ std::queue<std::unique_ptr<new_task_req>> new_task_queue;
 // exit task requests queue
 std::queue<std::unique_ptr<task_control_block>> exit_task_queue;
 
+semaphore_t sched_lock;
+
 unsigned long tick_count = 0;
-int task_counter = 0;
+uint32_t task_counter = 0;
 CONTEXT default_context;
 
 bool core_paused[CORE_COUNT];
@@ -30,12 +35,14 @@ void sched_end_task_callback()
 {
 	int core = actual_core();
 
+	semaphore_P(sched_lock, 1);
+	exit_task_queue.push(std::move(running_tasks[core]));
+
 	if (task_queue.empty())
 	{
-		running_tasks[core].release();
-
 		// interrupt scheduler
 		SetEvent(cpu_int_table_handlers[0][INT_SCHEDULER]);
+		semaphore_V(sched_lock, 1);
 		SuspendThread(GetCurrentThread());
 	}
 	else
@@ -44,6 +51,10 @@ void sched_end_task_callback()
 		task_queue.pop_front();
 
 		cpu_int_table_messages[core][1] = (void *)next_task->context.Esp;
+
+		next_task->state = RUNNING;
+		running_tasks[core] = std::move(next_task);
+		semaphore_V(sched_lock, 1);
 		do_reschedule();
 	}
 }
@@ -62,22 +73,21 @@ bool sched_active_task(int core)
 int sched_request_task(task_type type, task_common_pointers *data)
 {
 	int task_id;
+
 	std::unique_ptr<new_task_req> request(new new_task_req);
 	request->tcp.reset(data);
 	request->type = type;
 	request->task_id = task_counter++;
 	task_id = request->task_id;
+
+	semaphore_P(sched_lock, 1);
 	new_task_queue.push(std::move(request));
+	semaphore_V(sched_lock, 1);
 
 	return task_id;
 }
 
-void sched_request_exit(int core_number)
-{
-	exit_task_queue.push(std::move(running_tasks[core_number]));
-}
-
-int shed_get_tid()
+uint32_t shed_get_tid()
 {
 	return running_tasks[actual_core()]->task_id;
 }
@@ -210,6 +220,7 @@ DWORD __stdcall scheduler_run()
 		}
 	}
 
+	semaphore_V(sched_lock, 1);
 	return target_contexts[0].Esp;
 }
 
@@ -232,6 +243,8 @@ void init_scheduler()
 	sched_create_task(*tcb, task_request);
 	tcb->quantum = 0;
 	running_tasks[0] = std::move(tcb);
+
+	sched_lock._value = 1;
 
 	SetEvent(cpu_int_table_handlers[0][INT_CORE_RESUME]);
 }

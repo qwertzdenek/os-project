@@ -14,12 +14,7 @@ int wait_task(int task_id)
 	return 0;
 }
 
-void exit_task()
-{
-	sched_request_exit(actual_core());
-}
-
-int get_tid()
+uint8_t get_tid()
 {
 	return shed_get_tid();
 }
@@ -44,6 +39,9 @@ int semaphore_P(semaphore_t &s, int value)
     } while (!s._value.compare_exchange_weak(old, expected,
             std::memory_order_release,
             std::memory_order_relaxed));
+
+	// store locked core
+	s._core = actual_core();
 
     return expected;
 }

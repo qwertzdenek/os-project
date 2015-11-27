@@ -34,7 +34,6 @@ DWORD __stdcall task_main_runner(void *in)
 	wait_task(prod_id);
 	wait_task(cons_id);
 
-	exit_task();
 	return 0;
 }
 
@@ -66,8 +65,6 @@ DWORD __stdcall task_main_producent(void *in)
 		//        std::this_thread::sleep_for(std::chrono::milliseconds(100));
 	}
 
-
-	exit_task();
 	return 0;
 }
 
@@ -104,6 +101,5 @@ DWORD __stdcall task_main_consument(void *in)
 
 	}
 
-	exit_task();
 	return 0;
 }
