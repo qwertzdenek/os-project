@@ -17,6 +17,9 @@ bool sched_active_task(int core);
 void sched_store_context(int core, CONTEXT ctx);
 int sched_request_task(task_type type, task_common_pointers *data);
 
+std::string get_running_processes();
+std::string get_waiting_processes();
+
 uint32_t shed_get_tid();
 extern std::deque<std::unique_ptr<task_control_block>> task_queue;
 extern std::unique_ptr<task_control_block> running_tasks[CORE_COUNT];

@@ -51,7 +51,7 @@ int main(int argc, char *argv[], char *envp[])
 	// boot up
 	hardware_start();
 
-	/*Sleep(200);
+	Sleep(200);
 
 	exec_task(RUNNER, NULL);
 	exec_task(RUNNER, NULL);
@@ -60,7 +60,7 @@ int main(int argc, char *argv[], char *envp[])
 	exec_task(RUNNER, NULL);
 	exec_task(RUNNER, NULL);
 	exec_task(RUNNER, NULL);
-	exec_task(RUNNER, NULL);*/
+	exec_task(RUNNER, NULL);
 
 	while (running)
 	{
@@ -83,20 +83,10 @@ int main(int argc, char *argv[], char *envp[])
 		{
 			std::cout << "Task in front:" << std::endl;
 			std::cout << "id state type" << std::endl;
-			for (int i = 0; i < task_queue.size(); i++)
-			{
-				std::cout << task_queue[i]->task_id << " " << task_queue[i]->state << "" << task_queue[i]->type << std::endl;
-			}
-			std::cout << std::endl;
+			std::cout << get_waiting_processes() << std::endl;
 			std::cout << "Running tasks:" << std::endl;
 			std::cout << "id state type" << std::endl;
-			for (int i = 0; i < CORE_COUNT; i++)
-			{
-				if (running_tasks[i] != NULL)
-				{
-					std::cout << running_tasks[i]->task_id << " " << running_tasks[i]->state << "" << running_tasks[i]->type << std::endl;
-				}
-			}
+			std::cout << get_running_processes() << std::endl;
 		}
 		else if (input == "pause-core")
 		{

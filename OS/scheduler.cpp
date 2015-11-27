@@ -248,3 +248,38 @@ void init_scheduler()
 
 	SetEvent(cpu_int_table_handlers[0][INT_CORE_RESUME]);
 }
+
+std::string get_running_processes()
+{
+	std::string out = "";
+
+	semaphore_P(sched_lock, 1);
+
+	for (int i = 0; i < CORE_COUNT; i++)
+	{
+		if (running_tasks[i] != NULL)
+		{
+			out = running_tasks[i]->task_id + " " + task_state_names[running_tasks[i]->state] + " " + task_type_names[running_tasks[i]->type] + "\n";
+		}
+	}
+
+	semaphore_V(sched_lock, 1);
+
+	return out;
+}
+
+std::string get_waiting_processes()
+{
+	std::string out = "";
+
+	semaphore_P(sched_lock, 1);
+
+	for (int i = 0; i < task_queue.size(); i++)
+	{
+		out = task_queue[i]->task_id + " " + task_state_names[task_queue[i]->state] + " " + task_type_names[task_queue[i]->type] + "\n";
+	}
+
+	semaphore_V(sched_lock, 1);
+
+	return out;
+}
