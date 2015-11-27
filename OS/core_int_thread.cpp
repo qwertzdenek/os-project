@@ -3,6 +3,7 @@
 #include "core_int_thread.h"
 #include "scheduler.h"
 #include "core.h"
+#include "sched_calls.h"
 
 // interrupt table
 bool cpu_int_table_masked[CORE_COUNT][INTERRUPT_COUNT];
@@ -76,6 +77,7 @@ DWORD WINAPI core_int_thread_entry(void *param)
 
 		switch (num) {
 		case INT_SCHEDULER:
+			semaphore_P(sched_lock, 1);
 		case INT_RESCHEDULE:
 			core_do_interrupt(cpu_int_table_routines[core_number][num], core_number);
 			break;
