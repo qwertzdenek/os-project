@@ -5,12 +5,6 @@
 #include "core.h"
 #include "sched_calls.h"
 
-// interrupt table
-bool cpu_int_table_masked[CORE_COUNT][INTERRUPT_COUNT];
-void *cpu_int_table_routines[CORE_COUNT][INTERRUPT_COUNT];
-HANDLE cpu_int_table_handlers[CORE_COUNT][INTERRUPT_COUNT];
-void *cpu_int_table_messages[CORE_COUNT][INTERRUPT_COUNT];
-
 // controls int threads
 bool int_thread_running[CORE_COUNT];
 

@@ -5,6 +5,12 @@
 #include "interrupts.h"
 #include "scheduler.h"
 
+// interrupt table
+bool cpu_int_table_masked[CORE_COUNT][INTERRUPT_COUNT];
+void *cpu_int_table_routines[CORE_COUNT][INTERRUPT_COUNT];
+HANDLE cpu_int_table_handlers[CORE_COUNT][INTERRUPT_COUNT];
+void *cpu_int_table_messages[CORE_COUNT][INTERRUPT_COUNT];
+
 HANDLE power_button_event;
 HANDLE hw_thread;
 
