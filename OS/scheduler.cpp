@@ -15,22 +15,21 @@
 #define TIME_QUANTUM_DECREASE 25
 
 // actual assigned tasks
-std::unique_ptr<task_control_block> running_tasks[CORE_COUNT];
+static std::unique_ptr<task_control_block> running_tasks[CORE_COUNT];
 
 // main task queue
-std::deque<std::unique_ptr<task_control_block>> task_queue;
+static std::deque<std::unique_ptr<task_control_block>> task_queue;
 
 // new task queue
-std::list<new_task_req *> new_task_queue;
+static std::list<new_task_req *> new_task_queue;
 
 // exit task requests queue
-std::deque<std::unique_ptr<task_control_block>> exit_task_queue;
+static std::deque<std::unique_ptr<task_control_block>> exit_task_queue;
 
 semaphore_t sched_lock;
 
-unsigned long tick_count = 0;
-uint32_t task_counter = 0;
-CONTEXT default_context;
+static uint32_t task_counter = 0;
+static CONTEXT default_context;
 
 void sched_end_task_callback()
 {
@@ -71,20 +70,17 @@ bool sched_active_task(int core)
 }
 
 // returns new task id
-int sched_request_task(task_type type, task_common_pointers *data)
+uint32_t sched_request_task(task_type type, task_common_pointers *data)
 {
-	int task_id;
-	new_task_req * request;
-	semaphore_P(sched_lock, 1);
-
-	request = new new_task_req;
+	uint32_t task_id;
+	new_task_req *request = new new_task_req;
 
 	request->tcp.reset(data);
 	request->type = type;
 	request->task_id = task_counter++;
 	task_id = request->task_id;
-
 	
+	semaphore_P(sched_lock, 1);
 	new_task_queue.push_back(request);
 	semaphore_V(sched_lock, 1);
 

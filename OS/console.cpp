@@ -47,13 +47,13 @@ int main(int argc, char *argv[], char *envp[])
 	std::string input;
 	int number;
 
+	exec_task(RUNNER, NULL);
+	exec_task(RUNNER, NULL);
+
 	// boot up
 	hardware_start();
 
 	Sleep(200);
-
-	exec_task(RUNNER, NULL);
-	exec_task(RUNNER, NULL);
 
 	while (running)
 	{

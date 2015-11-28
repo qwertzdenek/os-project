@@ -37,7 +37,7 @@ typedef struct
 } task_common_pointers;
 
 typedef struct {
-	int task_id;
+	uint32_t task_id;
 	task_type type;
 	std::unique_ptr<task_common_pointers> tcp;
 } new_task_req;

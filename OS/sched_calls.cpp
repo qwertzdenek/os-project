@@ -2,12 +2,12 @@
 #include "sched_calls.h"
 #include "scheduler.h"
 
-int exec_task(task_type type, task_common_pointers *data)
+uint32_t exec_task(task_type type, task_common_pointers *data)
 {
 	return sched_request_task(type, data);
 }
 
-int wait_task(int task_id)
+uint32_t wait_task(uint32_t task_id)
 {
 	// TODO
 	return 0;
