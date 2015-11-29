@@ -121,7 +121,7 @@ void sched_create_task(task_control_block &tcb, new_task_req &req)
 	tcb.type = req.type;
 }
 
-DWORD __stdcall scheduler_run()
+DWORD __stdcall scheduler_run(void *ptr)
 {
 	CONTEXT target_contexts[CORE_COUNT];
 	bool context_changed[CORE_COUNT];
