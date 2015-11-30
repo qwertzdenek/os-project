@@ -8,6 +8,8 @@ extern void *cpu_int_table_routines[CORE_COUNT][INTERRUPT_COUNT];
 extern HANDLE cpu_int_table_handlers[CORE_COUNT][INTERRUPT_COUNT];
 extern void *cpu_int_table_messages[CORE_COUNT][INTERRUPT_COUNT];
 
+extern bool core_paused[CORE_COUNT];
+
 typedef enum {
 	INT_SCHEDULER, INT_RESCHEDULE, INT_CORE_TERM,
 	INT_CORE_RESUME, INT_CORE_SUSPEND

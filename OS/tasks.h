@@ -49,3 +49,7 @@ DWORD __stdcall task_main_idle(void *);
 
 // mapping from the task_type struct to pointers
 extern void *task_entry_points[4];
+
+extern const std::string task_state_names[];
+
+extern const std::string task_type_names[];

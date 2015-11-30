@@ -9,6 +9,7 @@
 #include "bootstrap.h"
 #include "sched_calls.h"
 #include "cpu.h"
+#include "scheduler.h"
 
 char *help()
 {
@@ -72,21 +73,70 @@ int main(int argc, char *argv[], char *envp[])
 		{
 			std::cout << help() << std::endl;
 		}
+		else if (input == "show")
+		{
+			std::cout << "Task in front:" << std::endl;
+			std::cout << "id state type" << std::endl;
+			std::cout << get_waiting_processes() << std::endl;
+			std::cout << "Running tasks:" << std::endl;
+			std::cout << "id state type" << std::endl;
+			std::cout << get_running_processes() << std::endl;
+		}
 		else if (input == "pause-core")
 		{
 			std::cout << "> ";
 			std::cin >> number;
 
 			// call interrupt
-			cpu_int_table_messages[number][4];
+			if (number >= 0 && number <= CORE_COUNT)
+			{
+				if (number == 0)
+				{
+					std::cout << "Core 0 cannot be paused" << std::endl;
+				}
+				else 
+				{
+					if (core_paused[number])
+					{
+						std::cout << "Core already paused" << std::endl;
+					}
+					else
+					{
+						core_paused[number] = true;
+						cpu_int_table_messages[number][4];
+						std::cout << "Core paused" << std::endl;
+					}
+				}
+			}
+			else
+			{
+				std::cout << "Wrong core number" << std::endl;
+			}
+			
 		}
-		else if (input == "resume-thread")
+		else if (input == "resume-core")
 		{
 			std::cout << "> ";
 			std::cin >> number;
 
 			// call interrupt
-			cpu_int_table_messages[number][3];
+			if (number >= 0 && number <= CORE_COUNT)
+			{
+				if (core_paused[number])
+				{
+					core_paused[number] = false;
+					cpu_int_table_messages[number][3];
+					std::cout << "Core resumed" << std::endl;
+				}
+				else
+				{
+					std::cout << "Core is not paused, cannot be resumed" << std::endl;
+				}
+			}
+			else
+			{
+				std::cout << "Wrong core number" << std::endl;
+			}
 		}
 		else
 		{

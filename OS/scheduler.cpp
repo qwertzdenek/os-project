@@ -31,6 +31,8 @@ semaphore_t sched_lock;
 static uint32_t task_counter = 0;
 static CONTEXT default_context;
 
+bool core_paused[CORE_COUNT];
+
 void sched_end_task_callback()
 {
 	int core = actual_core();
@@ -146,6 +148,10 @@ DWORD __stdcall scheduler_run(void *ptr)
 
 	for (int core = 0; core < CORE_COUNT; core++)
 	{
+		if (core_paused[core])
+		{
+			continue;
+		}
 		std::unique_ptr<task_control_block> new_task;
 		std::unique_ptr<task_control_block> current_task(std::move(running_tasks[core]));
 
@@ -243,4 +249,39 @@ void init_scheduler()
 	sched_lock._value = 1;
 
 	SetEvent(cpu_int_table_handlers[0][INT_CORE_RESUME]);
+}
+
+std::string get_running_processes()
+{
+	std::string out = "";
+
+	semaphore_P(sched_lock, 1);
+
+	for (int i = 0; i < CORE_COUNT; i++)
+	{
+		if (running_tasks[i] != NULL)
+		{
+			out = running_tasks[i]->task_id + " " + task_state_names[running_tasks[i]->state] + " " + task_type_names[running_tasks[i]->type] + "\n";
+		}
+	}
+
+	semaphore_V(sched_lock, 1);
+
+	return out;
+}
+
+std::string get_waiting_processes()
+{
+	std::string out = "";
+
+	semaphore_P(sched_lock, 1);
+
+	for (int i = 0; i < task_queue.size(); i++)
+	{
+		out = task_queue[i]->task_id + " " + task_state_names[task_queue[i]->state] + " " + task_type_names[task_queue[i]->type] + "\n";
+	}
+
+	semaphore_V(sched_lock, 1);
+
+	return out;
 }

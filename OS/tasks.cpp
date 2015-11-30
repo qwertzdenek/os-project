@@ -3,6 +3,10 @@
 
 #include "tasks.h"
 
+const std::string task_state_names[] = { "RUNNABLE", "BLOCKED", "RUNNING", "TERMINATED" };
+
+const std::string task_type_names[] = { "RUNNER", "CONSUMENT", "PRODUCENT", "IDLE" };
+
 // TODO: here we can define loop end ("politely" stop the process)
 // Note: maybe we should pass and check some atomic parameter in common pointers..?
 bool canRun(task_common_pointers *in) {
