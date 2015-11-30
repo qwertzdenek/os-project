@@ -8,8 +8,6 @@
 
 extern semaphore_t sched_lock;
 
-extern semaphore_t sched_lock;
-
 void init_scheduler();
 DWORD __stdcall scheduler_run(void *);
 
@@ -21,5 +19,3 @@ std::string get_running_processes();
 std::string get_waiting_processes();
 
 uint32_t shed_get_tid();
-extern std::deque<std::unique_ptr<task_control_block>> task_queue;
-extern std::unique_ptr<task_control_block> running_tasks[CORE_COUNT];
