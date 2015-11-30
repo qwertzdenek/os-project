@@ -9,10 +9,11 @@
 
 #define	BUFFER_SIZE 512
 
-class Buffer {
-public:
-	Buffer() : producerIndex(0), consumerIndex(0) {} ;
-	~Buffer() {};
+struct circular_buffer {
+	int producerIndex = 0;
+	int consumerIndex = 0;
+
+	double buffer[BUFFER_SIZE];
 
 	void add(double number) {
 		if (producerIndex == BUFFER_SIZE) {
@@ -29,9 +30,4 @@ public:
 
 		return buffer[consumerIndex++];
 	}
-
-private:
-	double buffer[BUFFER_SIZE];
-	int producerIndex;
-	int consumerIndex;
 };

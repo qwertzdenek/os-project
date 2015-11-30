@@ -5,7 +5,7 @@
 #include "buffer.h"
 #include "synchro.h"
 
-#define TASK_STACK_SIZE 1024
+#define TASK_STACK_SIZE 1024*1024
 
 typedef enum {
 	RUNNABLE, BLOCKED, RUNNING, TERMINATED
@@ -15,7 +15,7 @@ typedef enum {
 	RUNNER, CONSUMENT, PRODUCENT, IDLE
 } task_type;
 
-typedef struct task_control_block_inner {
+struct task_control_block {
 	void* stack;
 	CONTEXT context;
 	uint32_t task_id;
@@ -23,24 +23,23 @@ typedef struct task_control_block_inner {
 	task_state state;
 	task_type type;
 
-	task_control_block_inner() { stack = _aligned_malloc(TASK_STACK_SIZE, 64); }
-	~task_control_block_inner() { _aligned_free(stack); }
-} task_control_block;
+	task_control_block() { stack = _aligned_malloc(TASK_STACK_SIZE, 64); }
+	~task_control_block() { _aligned_free(stack); }
+};
 
-typedef struct
-{
+struct task_common_pointers {
 	semaphore_t full;
 	semaphore_t empty;
 	semaphore_t mutex;
 
-	Buffer buffer;
-} task_common_pointers;
+	circular_buffer buffer;
+};
 
-typedef struct {
+struct new_task_req {
 	uint32_t task_id;
 	task_type type;
 	std::unique_ptr<task_common_pointers> tcp;
-} new_task_req;
+};
 
 DWORD __stdcall task_main_consument(void *);
 DWORD __stdcall task_main_producent(void *);

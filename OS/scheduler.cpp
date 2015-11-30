@@ -164,9 +164,16 @@ DWORD __stdcall scheduler_run(void *ptr)
 			current_task->quantum -= TIME_QUANTUM_DECREASE;
 			if (current_task->quantum < 0)
 			{
-				current_task->quantum = TIME_QUANTUM;
-				current_task->state = RUNNABLE;
-				task_queue.push_back(std::move(current_task));
+				if (current_task->type == IDLE)
+				{
+					current_task.release();
+				}
+				else
+				{
+					current_task->quantum = TIME_QUANTUM;
+					current_task->state = RUNNABLE;
+					task_queue.push_back(std::move(current_task));
+				}
 			}
 			else
 			{
