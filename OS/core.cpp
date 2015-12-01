@@ -15,7 +15,7 @@ int actual_core()
 		if (current_id == core_thread_id[core])
 			return core;
 	}
-	return 0;
+	return -1;
 }
 
 void init_cpu_core(int core_number)

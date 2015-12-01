@@ -92,7 +92,10 @@ uint32_t sched_request_task(task_type type, std::shared_ptr<task_common_pointers
 
 uint32_t shed_get_tid()
 {
-	return running_tasks[actual_core()]->task_id;
+	int core = actual_core();
+
+	if (core < 0) return 0xFFFFFFFF;
+	else return running_tasks[core]->task_id;
 }
 
 void sched_create_task(task_control_block &tcb, new_task_req &req)
@@ -266,6 +269,8 @@ std::string sched_get_running_tasks()
 			ss << task_type_names[running_tasks[i]->type] << '\n';
 		}
 	}
+
+	semaphore_V(sched_lock, 1);
 
 	return ss.str();
 }
