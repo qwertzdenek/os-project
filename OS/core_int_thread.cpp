@@ -18,7 +18,8 @@ void core_do_interrupt(void *entry_point, int core_number)
 
 	SuspendThread(target_core);
 	
-	// don't stop thread with the scheduler lock
+	// don't interrupt thread with the scheduler lock
+	// deadlock warning
 	bool locked = try_semaphore_P(sched_lock, 1);
 
 	if (!locked && sched_lock._core == core_number)
@@ -38,8 +39,7 @@ void core_do_interrupt(void *entry_point, int core_number)
 	{
 		// push return address on task stack
 		// set interrupt handler on the cpu core
-		ctx.Esp -= sizeof(DWORD);
-		*(DWORD *)ctx.Esp = ctx.Eip;
+		esp_push(&ctx.Esp, ctx.Eip);
 
 		// store flags and general registers on stack here
 		esp_push(&ctx.Esp, ctx.ContextFlags);
