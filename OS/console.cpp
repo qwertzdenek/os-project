@@ -20,7 +20,14 @@ char *help()
 		"  David Fiedler (david.fido.fiedler@gmail.com)\n"
 		"  Tomáš Cígler (drtikozel@gmail.com)\n"
 		"Usage:\n"
-		"  -h  show this message\n";
+		"  -h  show this message\n"
+		"Interactive:\n"
+		"  exit - close the simulation\n"
+		"  start - start producent and consument\n"
+		"  help - show this message\n"
+		"  show - shows the scheduler status\n"
+		"  pause-core - suspends core execution. You cannot stop thread number 0.\n"
+		"  resume-core - resumes core code execution\n\n";
 }
 
 int main(int argc, char *argv[], char *envp[])
@@ -48,9 +55,6 @@ int main(int argc, char *argv[], char *envp[])
 	std::string input;
 	int number;
 
-	exec_task(RUNNER, NULL);
-	exec_task(RUNNER, NULL);
-
 	// boot up
 	hardware_start();
 
@@ -61,7 +65,7 @@ int main(int argc, char *argv[], char *envp[])
 		std::cin >> input;
 		std::transform(input.begin(), input.end(), input.begin(), ::tolower);
 
-		if (input == "close")
+		if (input == "exit")
 		{
 			running = false;
 		}

@@ -21,7 +21,7 @@ static std::unique_ptr<task_control_block> running_tasks[CORE_COUNT];
 static std::deque<std::unique_ptr<task_control_block>> task_queue;
 
 // new task queue
-static std::list<new_task_req *> new_task_queue;
+static std::list<std::unique_ptr<new_task_req>> new_task_queue;
 
 // exit task requests queue
 static std::deque<std::unique_ptr<task_control_block>> exit_task_queue;
@@ -33,7 +33,7 @@ static CONTEXT default_context;
 
 bool core_paused[CORE_COUNT];
 
-void sched_end_task_callback()
+void __stdcall sched_end_task_callback()
 {
 	int core = actual_core();
 
@@ -72,18 +72,18 @@ bool sched_active_task(int core)
 }
 
 // returns new task id
-uint32_t sched_request_task(task_type type, task_common_pointers *data)
+uint32_t sched_request_task(task_type type, std::shared_ptr<task_common_pointers> data)
 {
 	uint32_t task_id;
-	new_task_req *request = new new_task_req;
+	std::unique_ptr<new_task_req> request(new new_task_req);
 
-	request->tcp.reset(data);
+	request->tcp = data;
 	request->type = type;
 	request->task_id = task_counter++;
 	task_id = request->task_id;
 	
 	semaphore_P(sched_lock, 1);
-	new_task_queue.push_back(request);
+	new_task_queue.push_back(std::move(request));
 	semaphore_V(sched_lock, 1);
 
 	return task_id;
@@ -121,6 +121,7 @@ void sched_create_task(task_control_block &tcb, new_task_req &req)
 	tcb.quantum = TIME_QUANTUM;
 	tcb.state = RUNNABLE;
 	tcb.type = req.type;
+	tcb.data = req.tcp;
 }
 
 DWORD __stdcall scheduler_run(void *ptr)
@@ -138,7 +139,7 @@ DWORD __stdcall scheduler_run(void *ptr)
 	// check for new tasks
 	while (!new_task_queue.empty())
 	{
-		std::unique_ptr<new_task_req> task_request(new_task_queue.front());
+		std::unique_ptr<new_task_req> task_request(std::move(new_task_queue.front()));
 		new_task_queue.pop_front();
 
 		std::unique_ptr<task_control_block> tcb(new task_control_block);
@@ -283,7 +284,7 @@ std::string get_waiting_processes()
 
 	semaphore_P(sched_lock, 1);
 
-	for (int i = 0; i < task_queue.size(); i++)
+	for (size_t i = 0; i < task_queue.size(); i++)
 	{
 		out = task_queue[i]->task_id + " " + task_state_names[task_queue[i]->state] + " " + task_type_names[task_queue[i]->type] + "\n";
 	}

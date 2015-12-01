@@ -16,7 +16,7 @@ typedef struct sched_control_inner {
 
 static sched_stack sc;
 
-void do_schedule()
+__declspec(naked) void do_schedule()
 {
 	// this will run only on the first core
 	__asm
@@ -37,14 +37,20 @@ void do_schedule()
 	}
 }
 
-void do_reschedule()
+__declspec(naked) void do_reschedule()
 {
-	void *stack = cpu_int_table_messages[actual_core()][1];
-
 	__asm
 	{
-		mov esp, dword ptr[stack]
-		mov dword ptr[stack], 0
+		call actual_core
+		mov ecx, eax
+		mov eax, 4; pointer is 4 bytes
+		mov ebx, INTERRUPT_COUNT
+		mul ebx
+		mov ebx, ecx; core number
+		mul ebx
+		lea ebx, cpu_int_table_messages[eax + 4]
+		mov esp, dword ptr[ebx]
+		mov dword ptr[ebx], 0
 
 		popad
 		popfd

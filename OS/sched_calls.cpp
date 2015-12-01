@@ -2,7 +2,7 @@
 #include "sched_calls.h"
 #include "scheduler.h"
 
-uint32_t exec_task(task_type type, task_common_pointers *data)
+uint32_t exec_task(task_type type, std::shared_ptr<task_common_pointers> data)
 {
 	return sched_request_task(type, data);
 }
