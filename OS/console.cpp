@@ -85,12 +85,10 @@ int main(int argc, char *argv[], char *envp[])
 		}
 		else if (input == "show")
 		{
-			std::cout << "Task in front:" << std::endl;
-			std::cout << "id state type" << std::endl;
-			std::cout << get_waiting_processes() << std::endl;
-			std::cout << "Running tasks:" << std::endl;
-			std::cout << "id state type" << std::endl;
-			std::cout << get_running_processes() << std::endl;
+			std::cout << "-> Runnable tasks:" << std::endl;
+			std::cout << sched_get_runnable_tasks() << std::endl;
+			std::cout << "-> Running tasks:" << std::endl;
+			std::cout << sched_get_running_tasks() << std::endl;
 		}
 		else if (input == "pause-core")
 		{

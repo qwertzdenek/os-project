@@ -269,7 +269,7 @@ void init_scheduler()
 	SetEvent(cpu_int_table_handlers[0][INT_CORE_RESUME]);
 }
 
-std::string get_running_processes()
+std::string sched_get_running_tasks()
 {
 	std::stringstream ss;
 
@@ -279,6 +279,7 @@ std::string get_running_processes()
 	{
 		if (running_tasks[i] != NULL)
 		{
+			ss << i << "| ";
 			ss << running_tasks[i]->task_id << ' ';
 			ss << task_state_names[running_tasks[i]->state] << ' ';
 			ss << task_type_names[running_tasks[i]->type] << '\n';
@@ -290,7 +291,7 @@ std::string get_running_processes()
 	return ss.str();
 }
 
-std::string get_waiting_processes()
+std::string sched_get_runnable_tasks()
 {
 	std::stringstream ss;
 

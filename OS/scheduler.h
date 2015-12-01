@@ -13,7 +13,7 @@ bool sched_active_task(int core);
 void sched_store_context(int core, CONTEXT ctx);
 uint32_t sched_request_task(task_type type, std::shared_ptr<task_common_pointers> data);
 
-std::string get_running_processes();
-std::string get_waiting_processes();
+std::string sched_get_running_tasks();
+std::string sched_get_runnable_tasks();
 
 uint32_t shed_get_tid();
