@@ -17,14 +17,29 @@ void core_do_interrupt(void *entry_point, int core_number)
 	HANDLE target_core = core_handles[core_number];
 
 	SuspendThread(target_core);
-	GetThreadContext(target_core, &ctx);
 	
+	// don't stop thread with the scheduler lock
+	bool locked = try_semaphore_P(sched_lock, 1);
+
+	if (!locked && sched_lock._core == core_number)
+	{
+		ResumeThread(target_core);
+		semaphore_P(sched_lock, 1);
+		SuspendThread(target_core);
+	}
+	else if (!locked && sched_lock._core != core_number)
+	{
+		semaphore_P(sched_lock, 1);
+	}
+
+	GetThreadContext(target_core, &ctx);
+
 	if (sched_active_task(core_number))
 	{
 		// push return address on task stack
 		// set interrupt handler on the cpu core
-		ctx.Esp -= sizeof(DWORD32);
-		*(DWORD32 *)ctx.Esp = ctx.Eip;
+		ctx.Esp -= sizeof(DWORD);
+		*(DWORD *)ctx.Esp = ctx.Eip;
 
 		// store flags and general registers on stack here
 		esp_push(&ctx.Esp, ctx.ContextFlags);

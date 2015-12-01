@@ -3,16 +3,16 @@
 
 #include "scheduler.h"
 
-typedef struct sched_control_inner {
+struct sched_stack {
 	void *stack_top;
 	void *stack;
 
-	sched_control_inner() {
+	sched_stack() {
 		stack = _aligned_malloc(TASK_STACK_SIZE, 64);
 		stack_top = (void *)((DWORD)stack + TASK_STACK_SIZE - sizeof(void *));
 	}
-	~sched_control_inner() { _aligned_free(stack); }
-} sched_stack;
+	~sched_stack() { _aligned_free(stack); }
+};
 
 static sched_stack sc;
 
@@ -25,7 +25,14 @@ __declspec(naked) void do_schedule()
 		mov esp, [ebx].stack_top
 
 		call scheduler_run
-		mov esp, eax
+		push eax
+	}
+
+	semaphore_V(sched_lock, 1);
+
+	__asm
+	{
+		pop esp
 
 		; pop general registers
 		popad
@@ -49,6 +56,14 @@ __declspec(naked) void do_reschedule()
 		mov ebx, ecx; core number
 		mul ebx
 		lea ebx, cpu_int_table_messages[eax + 4]
+		push ebx
+	}
+
+	semaphore_V(sched_lock, 1);
+
+	__asm
+	{
+		pop ebx
 		mov esp, dword ptr[ebx]
 		mov dword ptr[ebx], 0
 

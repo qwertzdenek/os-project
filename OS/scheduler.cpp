@@ -26,14 +26,14 @@ static std::list<std::unique_ptr<new_task_req>> new_task_queue;
 // exit task requests queue
 static std::deque<std::unique_ptr<task_control_block>> exit_task_queue;
 
-static semaphore_t sched_lock;
+semaphore_t sched_lock;
 
 static uint32_t task_counter = 0;
 static CONTEXT default_context;
 
 bool core_paused[CORE_COUNT];
 
-void __stdcall sched_end_task_callback()
+void sched_end_task_callback()
 {
 	int core = actual_core();
 
@@ -64,9 +64,7 @@ void __stdcall sched_end_task_callback()
 
 void sched_store_context(int core, CONTEXT ctx)
 {
-	semaphore_P(sched_lock, 1);
 	running_tasks[core]->context = ctx;
-	semaphore_V(sched_lock, 1);
 }
 
 bool sched_active_task(int core)
@@ -127,13 +125,11 @@ void sched_create_task(task_control_block &tcb, new_task_req &req)
 	tcb.data = req.tcp;
 }
 
-DWORD __stdcall scheduler_run(void *ptr)
+DWORD scheduler_run(void *ptr)
 {
 	CONTEXT target_contexts[CORE_COUNT];
 	bool context_changed[CORE_COUNT];
 	memset(&context_changed, 0, CORE_COUNT * sizeof(bool));
-
-	semaphore_P(sched_lock, 1);
 
 	// clean up exited tasks
 	while (!exit_task_queue.empty())
@@ -240,33 +236,18 @@ DWORD __stdcall scheduler_run(void *ptr)
 		}
 	}
 
-	semaphore_V(sched_lock, 1);
 	return target_contexts[0].Esp;
 }
 
 void init_scheduler()
 {
 	memset(&default_context, 0, sizeof(default_context));
-	HANDLE CPUCore = (HANDLE)CreateThread(NULL, 0, task_main_idle, 0, CREATE_SUSPENDED, NULL);
+	HANDLE CPUCore = (HANDLE)CreateThread(NULL, 0, NULL, 0, CREATE_SUSPENDED, NULL);
 
 	default_context.ContextFlags = CONTEXT_FULL;
 	GetThreadContext(CPUCore, &default_context);
 
-	// initialize first idle task on first core
-	new_task_req task_request;
-	std::unique_ptr<task_control_block> tcb(new task_control_block);
-
-	task_request.tcp = NULL;
-	task_request.type = IDLE;
-	task_request.task_id = task_counter++;
-
-	sched_create_task(*tcb, task_request);
-	tcb->quantum = 0;
-	running_tasks[0] = std::move(tcb);
-
-	sched_lock._value = 1;
-
-	SetEvent(cpu_int_table_handlers[0][INT_CORE_RESUME]);
+	SetEvent(cpu_int_table_handlers[0][INT_SCHEDULER]);
 }
 
 std::string sched_get_running_tasks()
@@ -285,8 +266,6 @@ std::string sched_get_running_tasks()
 			ss << task_type_names[running_tasks[i]->type] << '\n';
 		}
 	}
-
-	semaphore_V(sched_lock, 1);
 
 	return ss.str();
 }

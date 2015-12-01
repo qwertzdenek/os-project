@@ -16,13 +16,14 @@ bool canRun(task_common_pointers *in) {
 void *task_entry_points[4] = { task_main_runner, task_main_consument,
 							   task_main_producent, task_main_idle };
 
-DWORD __stdcall task_main_idle(void *)
+DWORD task_main_idle(void *)
 {
 	while (1)
 		;
+	return 0;
 }
 
-DWORD __stdcall task_main_runner(void *in)
+DWORD task_main_runner(void *in)
 {
 	// init common memory and call exec_task
 	std::shared_ptr<task_common_pointers> ptr(new task_common_pointers);
@@ -41,7 +42,7 @@ DWORD __stdcall task_main_runner(void *in)
 	return 0;
 }
 
-DWORD __stdcall task_main_producent(void *in)
+DWORD task_main_producent(void *in)
 {
 	task_common_pointers *task = (task_common_pointers *)in;
 	int i = 0;
@@ -72,7 +73,7 @@ DWORD __stdcall task_main_producent(void *in)
 	return 0;
 }
 
-DWORD __stdcall task_main_consument(void *in)
+DWORD task_main_consument(void *in)
 {
 	task_common_pointers *task = (task_common_pointers *)in;
 

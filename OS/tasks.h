@@ -42,10 +42,10 @@ struct new_task_req {
 	std::shared_ptr<task_common_pointers> tcp;
 };
 
-DWORD __stdcall task_main_consument(void *);
-DWORD __stdcall task_main_producent(void *);
-DWORD __stdcall task_main_runner(void *);
-DWORD __stdcall task_main_idle(void *);
+DWORD task_main_consument(void *);
+DWORD task_main_producent(void *);
+DWORD task_main_runner(void *);
+DWORD task_main_idle(void *);
 
 // mapping from the task_type struct to pointers
 extern void *task_entry_points[4];

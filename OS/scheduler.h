@@ -6,8 +6,10 @@
 #include "tasks.h"
 #include "cpu.h"
 
+extern semaphore_t sched_lock;
+
 void init_scheduler();
-DWORD __stdcall scheduler_run(void *);
+DWORD scheduler_run(void *);
 
 bool sched_active_task(int core);
 void sched_store_context(int core, CONTEXT ctx);
