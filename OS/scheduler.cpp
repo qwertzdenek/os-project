@@ -26,7 +26,7 @@ static std::list<std::unique_ptr<new_task_req>> new_task_queue;
 // exit task requests queue
 static std::deque<std::unique_ptr<task_control_block>> exit_task_queue;
 
-semaphore_t sched_lock;
+static semaphore_t sched_lock;
 
 static uint32_t task_counter = 0;
 static CONTEXT default_context;
@@ -44,8 +44,8 @@ void __stdcall sched_end_task_callback()
 	{
 		// interrupt scheduler
 		SetEvent(cpu_int_table_handlers[0][INT_SCHEDULER]);
-		semaphore_V(sched_lock, 1);
 		core_paused[core] = true;
+		semaphore_V(sched_lock, 1);
 		SuspendThread(GetCurrentThread());
 	}
 	else
@@ -64,7 +64,9 @@ void __stdcall sched_end_task_callback()
 
 void sched_store_context(int core, CONTEXT ctx)
 {
+	semaphore_P(sched_lock, 1);
 	running_tasks[core]->context = ctx;
+	semaphore_V(sched_lock, 1);
 }
 
 bool sched_active_task(int core)
@@ -131,6 +133,8 @@ DWORD __stdcall scheduler_run(void *ptr)
 	bool context_changed[CORE_COUNT];
 	memset(&context_changed, 0, CORE_COUNT * sizeof(bool));
 
+	semaphore_P(sched_lock, 1);
+
 	// clean up exited tasks
 	while (!exit_task_queue.empty())
 	{
@@ -150,10 +154,6 @@ DWORD __stdcall scheduler_run(void *ptr)
 
 	for (int core = 0; core < CORE_COUNT; core++)
 	{
-		if (core_paused[core])
-		{
-			continue;
-		}
 		std::unique_ptr<task_control_block> new_task;
 		std::unique_ptr<task_control_block> current_task(std::move(running_tasks[core]));
 

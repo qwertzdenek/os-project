@@ -4,13 +4,13 @@
 #include "core.h"
 
 // release semaphore and return his value
-void semaphore_V(semaphore_t &s, int value)
+void __stdcall semaphore_V(semaphore_t &s, int value)
 {
 	s._value += value;
 }
 
 // accuire semaphore and return his value
-int semaphore_P(semaphore_t &s, int value)
+int __stdcall semaphore_P(semaphore_t &s, int value)
 {
 	int expected;
 	int old;

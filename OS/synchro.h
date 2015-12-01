@@ -8,7 +8,7 @@ typedef struct {
 } semaphore_t;
 
 // accuire semaphore and return his value
-int semaphore_P(semaphore_t &s, int value);
+int __stdcall semaphore_P(semaphore_t &s, int value);
 
 // release semaphore and return his value
-void semaphore_V(semaphore_t &s, int value);
+void __stdcall semaphore_V(semaphore_t &s, int value);
