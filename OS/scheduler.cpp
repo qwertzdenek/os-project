@@ -1,7 +1,7 @@
 #include "stdafx.h"
 
+#include <sstream>
 #include <memory>
-#include <mutex>
 #include <deque>
 #include <list>
 
@@ -45,6 +45,7 @@ void __stdcall sched_end_task_callback()
 		// interrupt scheduler
 		SetEvent(cpu_int_table_handlers[0][INT_SCHEDULER]);
 		semaphore_V(sched_lock, 1);
+		core_paused[core] = true;
 		SuspendThread(GetCurrentThread());
 	}
 	else
@@ -156,6 +157,9 @@ DWORD __stdcall scheduler_run(void *ptr)
 		std::unique_ptr<task_control_block> new_task;
 		std::unique_ptr<task_control_block> current_task(std::move(running_tasks[core]));
 
+		// never trust task id
+		task_control_block *current_task_ptr = current_task.get();
+		
 		target_contexts[core] = default_context;
 		context_changed[core] = true;
 
@@ -212,11 +216,17 @@ DWORD __stdcall scheduler_run(void *ptr)
 			task_queue.pop_front();
 		}
 
+		if (current_task_ptr != NULL && new_task.get() == current_task_ptr)
+		{
+			context_changed[core] = false;
+		}
+		else
+		{
+			context_changed[core] = true;
+		}
+
 		new_task->state = RUNNING;
-
-		context_changed[core] = true;
 		target_contexts[core] = new_task->context;
-
 		running_tasks[core] = std::move(new_task);
 	}
 
@@ -261,7 +271,7 @@ void init_scheduler()
 
 std::string get_running_processes()
 {
-	std::string out = "";
+	std::stringstream ss;
 
 	semaphore_P(sched_lock, 1);
 
@@ -269,27 +279,31 @@ std::string get_running_processes()
 	{
 		if (running_tasks[i] != NULL)
 		{
-			out = running_tasks[i]->task_id + " " + task_state_names[running_tasks[i]->state] + " " + task_type_names[running_tasks[i]->type] + "\n";
+			ss << running_tasks[i]->task_id << ' ';
+			ss << task_state_names[running_tasks[i]->state] << ' ';
+			ss << task_type_names[running_tasks[i]->type] << '\n';
 		}
 	}
 
 	semaphore_V(sched_lock, 1);
 
-	return out;
+	return ss.str();
 }
 
 std::string get_waiting_processes()
 {
-	std::string out = "";
+	std::stringstream ss;
 
 	semaphore_P(sched_lock, 1);
 
 	for (size_t i = 0; i < task_queue.size(); i++)
 	{
-		out = task_queue[i]->task_id + " " + task_state_names[task_queue[i]->state] + " " + task_type_names[task_queue[i]->type] + "\n";
+		ss << task_queue[i]->task_id << ' ';
+		ss << task_state_names[task_queue[i]->state] << ' ';
+		ss << task_type_names[task_queue[i]->type] << '\n';
 	}
 
 	semaphore_V(sched_lock, 1);
 
-	return out;
+	return ss.str();
 }
