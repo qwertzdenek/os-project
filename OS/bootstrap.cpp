@@ -56,7 +56,7 @@ void cpu_init()
 			cpu_int_table_routines[core][i] = NULL;
 		}
 
-		core_int_handles[core] = CreateThread(NULL, 0, core_int_thread_entry, (void *)core, 0, NULL);
+		core_int_handles[core] = CreateThread(NULL, TASK_STACK_SIZE, core_int_thread_entry, (void *)core, 0, NULL);
 		SetThreadAffinityMask(core_int_handles[core], 0x1 << core);
 
 		core_paused[core] = false;

@@ -11,6 +11,10 @@
 #include "cpu.h"
 #include "scheduler.h"
 
+#define CRTDBG_MAP_ALLOC
+#include <stdlib.h>
+#include <crtdbg.h>
+
 char *help()
 {
 	return
@@ -32,6 +36,8 @@ char *help()
 
 int main(int argc, char *argv[], char *envp[])
 {
+	_CrtSetDbgFlag(_CRTDBG_ALLOC_MEM_DF | _CRTDBG_LEAK_CHECK_DF);
+
 	bool help_flag = false;
 
 	for (int i = 1; i < argc; i++)

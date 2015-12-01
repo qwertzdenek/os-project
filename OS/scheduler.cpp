@@ -167,7 +167,7 @@ DWORD __stdcall scheduler_run(void *ptr)
 			{
 				if (current_task->type == IDLE)
 				{
-					current_task.release();
+					current_task.reset();
 				}
 				else
 				{
