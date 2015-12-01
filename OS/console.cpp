@@ -59,7 +59,7 @@ int main(int argc, char *argv[], char *envp[])
 	bool running = true;
 
 	std::string input;
-	int number;
+	int core_number;
 
 	// boot up
 	hardware_start();
@@ -93,25 +93,25 @@ int main(int argc, char *argv[], char *envp[])
 		else if (input == "pause-core")
 		{
 			std::cout << "> ";
-			std::cin >> number;
+			std::cin >> core_number;
 
 			// call interrupt
-			if (number >= 0 && number <= CORE_COUNT)
+			if (core_number >= 0 && core_number < CORE_COUNT)
 			{
-				if (number == 0)
+				if (core_number == 0)
 				{
 					std::cout << "Core 0 cannot be paused" << std::endl;
 				}
 				else 
 				{
-					if (core_paused[number])
+					if (core_paused[core_number])
 					{
 						std::cout << "Core already paused" << std::endl;
 					}
 					else
 					{
-						core_paused[number] = true;
-						cpu_int_table_messages[number][4];
+						core_paused[core_number] = true;
+						SetEvent(cpu_int_table_handlers[core_number][INT_CORE_SUSPEND]);
 						std::cout << "Core paused" << std::endl;
 					}
 				}
@@ -120,20 +120,18 @@ int main(int argc, char *argv[], char *envp[])
 			{
 				std::cout << "Wrong core number" << std::endl;
 			}
-			
 		}
 		else if (input == "resume-core")
 		{
 			std::cout << "> ";
-			std::cin >> number;
+			std::cin >> core_number;
 
 			// call interrupt
-			if (number >= 0 && number <= CORE_COUNT)
+			if (core_number >= 0 && core_number < CORE_COUNT)
 			{
-				if (core_paused[number])
+				if (core_paused[core_number])
 				{
-					core_paused[number] = false;
-					cpu_int_table_messages[number][3];
+					core_paused[core_number] = false;
 					std::cout << "Core resumed" << std::endl;
 				}
 				else

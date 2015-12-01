@@ -44,7 +44,6 @@ void sched_end_task_callback()
 	{
 		// interrupt scheduler
 		SetEvent(cpu_int_table_handlers[0][INT_SCHEDULER]);
-		core_paused[core] = true;
 		semaphore_V(sched_lock, 1);
 		SuspendThread(GetCurrentThread());
 	}
@@ -153,6 +152,11 @@ DWORD scheduler_run(void *ptr)
 
 	for (int core = 0; core < CORE_COUNT; core++)
 	{
+		if (core_paused[core])
+		{
+			continue;
+		}
+
 		std::unique_ptr<task_control_block> new_task;
 		std::unique_ptr<task_control_block> current_task(std::move(running_tasks[core]));
 

@@ -25,7 +25,6 @@ void init_cpu_core(int core_number)
 	SetThreadAffinityMask(core_handles[core_number], 0x1 << core_number);
 
 	core_thread_id[core_number] = thread_id;
-	core_paused[core_number] = true;
 }
 
 void esp_push(DWORD *esp, DWORD value)

@@ -96,10 +96,8 @@ DWORD WINAPI core_int_thread_entry(void *param)
 		case INT_CORE_RESUME:
 			while (ResumeThread(core_handles[core_number]))
 				;
-			core_paused[core_number] = false;
 			break;
 		case INT_CORE_SUSPEND:
-			core_paused[core_number] = true;
 			SuspendThread(core_handles[core_number]);
 			break;
 		}
