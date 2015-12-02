@@ -296,3 +296,25 @@ std::string sched_get_runnable_tasks()
 
 	return ss.str();
 }
+
+std::string sched_get_cores_info()
+{
+	std::stringstream ss;
+
+	semaphore_P(sched_lock, 1);
+
+	for (int i = 0; i < CORE_COUNT; i++)
+	{
+		if (running_tasks[i] != NULL)
+		{
+			ss << "core " << i << " occupied" << '\n';
+		}
+		else {
+			ss << "core " << i << " free" << '\n';
+		}
+	}
+
+	semaphore_V(sched_lock, 1);
+
+	return ss.str();
+}

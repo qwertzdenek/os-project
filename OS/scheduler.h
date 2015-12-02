@@ -17,5 +17,6 @@ uint32_t sched_request_task(task_type type, std::shared_ptr<task_common_pointers
 
 std::string sched_get_running_tasks();
 std::string sched_get_runnable_tasks();
+std::string sched_get_cores_info();
 
 uint32_t shed_get_tid();

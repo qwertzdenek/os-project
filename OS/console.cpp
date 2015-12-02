@@ -89,6 +89,8 @@ int main(int argc, char *argv[], char *envp[])
 			std::cout << sched_get_runnable_tasks() << std::endl;
 			std::cout << "-> Running tasks:" << std::endl;
 			std::cout << sched_get_running_tasks() << std::endl;
+			std::cout << "-> Cores:" << std::endl;
+			std::cout << sched_get_cores_info() << std::endl;
 		}
 		else if (input == "pause-core")
 		{
