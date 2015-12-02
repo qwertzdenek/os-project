@@ -3,7 +3,7 @@
 #include <atomic>
 
 typedef struct {
-	std::atomic<int> _value = 1;
+	int _value = 1;
 	int _core;
 } semaphore_t;
 
