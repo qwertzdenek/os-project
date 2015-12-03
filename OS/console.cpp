@@ -20,9 +20,9 @@ char *help()
 	return
 		"KIV/OS Scheduler project\n"
 		"Authors:\n"
-		"  Zdenìk Janeèek (ycdmdj@gmail.com)\n"
+		"  Zdenek Janecek (ycdmdj@gmail.com)\n"
 		"  David Fiedler (david.fido.fiedler@gmail.com)\n"
-		"  Tomáš Cígler (drtikozel@gmail.com)\n"
+		"  Tomas Cigler (drtikozel@gmail.com)\n"
 		"Usage:\n"
 		"  -h  show this message\n"
 		"Interactive:\n"
@@ -115,14 +115,12 @@ int main(int argc, char *argv[], char *envp[])
 				}
 				else 
 				{
-					if (core_paused[core_number])
+					if (sched_request_pause(core_number))
 					{
 						std::cout << "Core already paused" << std::endl;
 					}
 					else
 					{
-						core_paused[core_number] = true;
-						SetEvent(cpu_int_table_handlers[core_number][INT_CORE_SUSPEND]);
 						std::cout << "Core paused" << std::endl;
 					}
 				}
@@ -140,9 +138,8 @@ int main(int argc, char *argv[], char *envp[])
 			// call interrupt
 			if (core_number >= 0 && core_number < CORE_COUNT)
 			{
-				if (core_paused[core_number])
+				if (sched_request_resume(core_number))
 				{
-					core_paused[core_number] = false;
 					std::cout << "Core resumed" << std::endl;
 				}
 				else

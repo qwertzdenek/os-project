@@ -33,43 +33,16 @@ void core_do_reschedule(int core_number)
 void core_do_schedule()
 {
 	CONTEXT ctx;
+	memset(&ctx, 0, sizeof(ctx));
+	ctx.ContextFlags = CONTEXT_FULL;
 
 	semaphore_P(sched_lock, 1);
 
 	for (int core = 0; core < CORE_COUNT; core++)
 	{
-		memset(&ctx, 0, sizeof(ctx));
-		ctx.ContextFlags = CONTEXT_FULL;
-		HANDLE core_handle = core_handles[core];
-
-		if (sched_active_task(core))
-		{
-			SuspendThread(core_handle);
-			GetThreadContext(core_handle, &ctx);
-
-			// push return address on task stack
-			// set interrupt handler on the cpu core
-			esp_push(&ctx.Esp, ctx.Eip);
-
-			// store flags and general registers on stack here
-			esp_push(&ctx.Esp, ctx.ContextFlags);
-			// push dummy registers
-			esp_push(&ctx.Esp, ctx.Eax);
-			esp_push(&ctx.Esp, ctx.Ecx);
-			esp_push(&ctx.Esp, ctx.Edx);
-			esp_push(&ctx.Esp, ctx.Ebx);
-			DWORD new_esp = ctx.Esp - 4 * sizeof(DWORD);
-			esp_push(&ctx.Esp, new_esp);
-			esp_push(&ctx.Esp, ctx.Ebp);
-			esp_push(&ctx.Esp, ctx.Esi);
-			esp_push(&ctx.Esp, ctx.Edi);
-
-			sched_store_context(core, ctx);
-		}
+		sched_store_context(core);
 	}
 
-	memset(&ctx, 0, sizeof(ctx));
-	ctx.ContextFlags = CONTEXT_FULL;
 	GetThreadContext(core_handles[0], &ctx);
 
 	ctx.Eip = (DWORD) cpu_int_table_routines[0][INT_SCHEDULER];

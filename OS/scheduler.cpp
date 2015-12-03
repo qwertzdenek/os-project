@@ -31,7 +31,9 @@ semaphore_t sched_lock;
 static uint32_t task_counter = 0;
 static CONTEXT default_context;
 
-bool core_paused[CORE_COUNT];
+static bool core_req_pause[CORE_COUNT];
+static bool core_req_resume[CORE_COUNT];
+static bool core_paused[CORE_COUNT];
 
 void sched_end_task_callback()
 {
@@ -65,9 +67,37 @@ void sched_end_task_callback()
 	}
 }
 
-void sched_store_context(int core, CONTEXT ctx)
+// will suspend thread and store his context
+void sched_store_context(int core)
 {
-	running_tasks[core]->context = ctx;
+	CONTEXT ctx;
+	memset(&ctx, 0, sizeof(ctx));
+	ctx.ContextFlags = CONTEXT_FULL;
+
+	if (sched_active_task(core))
+	{
+		SuspendThread(core_handles[core]);
+		GetThreadContext(core_handles[core], &ctx);
+
+		// push return address on task stack
+		// set interrupt handler on the cpu core
+		esp_push(&ctx.Esp, ctx.Eip);
+
+		// store flags and general registers on stack here
+		esp_push(&ctx.Esp, ctx.ContextFlags);
+		// push dummy registers
+		esp_push(&ctx.Esp, ctx.Eax);
+		esp_push(&ctx.Esp, ctx.Ecx);
+		esp_push(&ctx.Esp, ctx.Edx);
+		esp_push(&ctx.Esp, ctx.Ebx);
+		DWORD new_esp = ctx.Esp - 4 * sizeof(DWORD);
+		esp_push(&ctx.Esp, new_esp);
+		esp_push(&ctx.Esp, ctx.Ebp);
+		esp_push(&ctx.Esp, ctx.Esi);
+		esp_push(&ctx.Esp, ctx.Edi);
+
+		running_tasks[core]->context = ctx;
+	}
 }
 
 bool sched_active_task(int core)
@@ -91,6 +121,24 @@ uint32_t sched_request_task(task_type type, std::shared_ptr<task_common_pointers
 	semaphore_V(sched_lock, 1);
 
 	return task_id;
+}
+
+bool sched_request_pause(int core)
+{
+	if (!core_paused[core])
+	{
+		core_req_pause[core] = true;
+	}
+	return core_paused[core];
+}
+
+bool sched_request_resume(int core)
+{
+	if (core_paused[core])
+	{
+		core_req_resume[core] = true;
+	}
+	return core_paused[core];
 }
 
 uint32_t shed_get_tid()
@@ -136,6 +184,24 @@ DWORD scheduler_run(void *ptr)
 	CONTEXT target_contexts[CORE_COUNT];
 	bool context_changed[CORE_COUNT];
 	memset(&context_changed, 0, CORE_COUNT * sizeof(bool));
+
+	// pause and resume requests
+	for (int core = 0; core < CORE_COUNT; core++)
+	{
+		if (core_req_pause[core])
+		{
+			core_paused[core] = true;
+			sched_store_context(core);
+			task_queue.push_back(std::move(running_tasks[core]));
+			core_req_pause[core] = false;
+		}
+
+		if (core_req_resume[core])
+		{
+			core_paused[core] = false;
+			core_req_resume[core] = false;
+		}
+	}
 
 	// clean up exited tasks
 	while (!exit_task_queue.empty())
@@ -258,6 +324,10 @@ void init_scheduler()
 	default_context.ContextFlags = CONTEXT_FULL;
 	GetThreadContext(CPUCore, &default_context);
 
+	memset(core_req_pause, 0, CORE_COUNT*sizeof(bool));
+	memset(core_req_resume, 0, CORE_COUNT*sizeof(bool));
+	memset(core_paused, 0, CORE_COUNT*sizeof(bool));
+
 	SetEvent(cpu_int_table_handlers[0][INT_SCHEDULER]);
 }
 
@@ -269,7 +339,7 @@ std::string sched_get_running_tasks()
 
 	for (int i = 0; i < CORE_COUNT; i++)
 	{
-		if (running_tasks[i] != NULL)
+		if (sched_active_task(i))
 		{
 			ss << i << "| ";
 			ss << running_tasks[i]->task_id << ' ';

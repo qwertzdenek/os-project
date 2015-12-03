@@ -54,6 +54,7 @@ __declspec(naked) void do_reschedule()
 		mul ebx
 		lea ebx, cpu_int_table_messages[eax + 4]
 		mov esp, dword ptr[ebx]
+		mov dword ptr[ebx], 0
 	}
 
 	semaphore_V(sched_lock, 1);
