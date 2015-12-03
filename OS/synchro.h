@@ -3,7 +3,7 @@
 #include <atomic>
 
 typedef struct {
-	volatile int _value = 1;
+	std::atomic<int> _value = 1;
 } semaphore_t;
 
 // accuire semaphore and return his value
