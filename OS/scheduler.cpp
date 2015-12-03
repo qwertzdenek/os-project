@@ -56,8 +56,12 @@ void sched_end_task_callback()
 
 		next_task->state = RUNNING;
 		running_tasks[core] = std::move(next_task);
-		semaphore_V(sched_lock, 1);
-		do_reschedule();
+
+		__asm
+		{
+			mov ecx, core
+			call do_reschedule
+		}
 	}
 }
 
@@ -238,7 +242,7 @@ DWORD scheduler_run(void *ptr)
 	{
 		if (context_changed[core])
 		{
-			cpu_int_table_messages[core][1] = (void *)target_contexts[core].Esp;
+			cpu_int_table_messages[core][INT_RESCHEDULE] = (void *)target_contexts[core].Esp;
 			SetEvent(cpu_int_table_handlers[core][INT_RESCHEDULE]);
 		}
 	}

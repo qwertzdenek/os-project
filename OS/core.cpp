@@ -7,14 +7,18 @@
 HANDLE core_handles[CORE_COUNT];
 DWORD core_thread_id[CORE_COUNT];
 
+semaphore_t core_lock;
+
 int actual_core()
 {
+	semaphore_P(core_lock, 1);
 	DWORD current_id = GetCurrentThreadId();
 	for (int core = 0; core < CORE_COUNT; core++)
 	{
 		if (current_id == core_thread_id[core])
 			return core;
 	}
+	semaphore_V(core_lock, 1);
 	return -1;
 }
 

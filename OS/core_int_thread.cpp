@@ -8,59 +8,74 @@
 // controls int threads
 bool int_thread_running[CORE_COUNT];
 
-void core_do_interrupt(void *entry_point, int core_number)
+// Old context is stored by scheduler,
+// we will do only rescheduling
+void core_do_reschedule(int core_number)
 {
 	CONTEXT ctx;
+
 	memset(&ctx, 0, sizeof(ctx));
 	ctx.ContextFlags = CONTEXT_FULL;
 
-	HANDLE target_core = core_handles[core_number];
+	SuspendThread(core_handles[core_number]);
+	GetThreadContext(core_handles[core_number], &ctx);
 
-	SuspendThread(target_core);
-	
-	// don't interrupt thread with the scheduler lock
-	// deadlock warning
-	bool locked = try_semaphore_P(sched_lock, 1);
+	ctx.Ecx = core_number;
+	ctx.Eip = (DWORD)cpu_int_table_routines[0][INT_RESCHEDULE];
 
-	if (!locked && sched_lock._core == core_number)
+	semaphore_P(sched_lock, 1);
+
+	SetThreadContext(core_handles[core_number], &ctx);
+	while (ResumeThread(core_handles[core_number]))
+		;
+}
+
+void core_do_schedule()
+{
+	CONTEXT ctx;
+
+	semaphore_P(sched_lock, 1);
+
+	for (int core = 0; core < CORE_COUNT; core++)
 	{
-		ResumeThread(target_core);
-		semaphore_P(sched_lock, 1);
-		SuspendThread(target_core);
-	}
-	else if (!locked && sched_lock._core != core_number)
-	{
-		semaphore_P(sched_lock, 1);
-	}
+		memset(&ctx, 0, sizeof(ctx));
+		ctx.ContextFlags = CONTEXT_FULL;
+		HANDLE core_handle = core_handles[core];
 
-	GetThreadContext(target_core, &ctx);
+		if (sched_active_task(core))
+		{
+			SuspendThread(core_handle);
+			GetThreadContext(core_handle, &ctx);
 
-	if (sched_active_task(core_number))
-	{
-		// push return address on task stack
-		// set interrupt handler on the cpu core
-		esp_push(&ctx.Esp, ctx.Eip);
+			// push return address on task stack
+			// set interrupt handler on the cpu core
+			esp_push(&ctx.Esp, ctx.Eip);
 
-		// store flags and general registers on stack here
-		esp_push(&ctx.Esp, ctx.ContextFlags);
-		// push dummy registers
-		esp_push(&ctx.Esp, ctx.Eax);
-		esp_push(&ctx.Esp, ctx.Ecx);
-		esp_push(&ctx.Esp, ctx.Edx);
-		esp_push(&ctx.Esp, ctx.Ebx);
-		DWORD new_esp = ctx.Esp - 4 * sizeof(DWORD);
-		esp_push(&ctx.Esp, new_esp);
-		esp_push(&ctx.Esp, ctx.Ebp);
-		esp_push(&ctx.Esp, ctx.Esi);
-		esp_push(&ctx.Esp, ctx.Edi);
+			// store flags and general registers on stack here
+			esp_push(&ctx.Esp, ctx.ContextFlags);
+			// push dummy registers
+			esp_push(&ctx.Esp, ctx.Eax);
+			esp_push(&ctx.Esp, ctx.Ecx);
+			esp_push(&ctx.Esp, ctx.Edx);
+			esp_push(&ctx.Esp, ctx.Ebx);
+			DWORD new_esp = ctx.Esp - 4 * sizeof(DWORD);
+			esp_push(&ctx.Esp, new_esp);
+			esp_push(&ctx.Esp, ctx.Ebp);
+			esp_push(&ctx.Esp, ctx.Esi);
+			esp_push(&ctx.Esp, ctx.Edi);
 
-		sched_store_context(core_number, ctx);
+			sched_store_context(core, ctx);
+		}
 	}
 
-	ctx.Eip = (DWORD32) entry_point;
+	memset(&ctx, 0, sizeof(ctx));
+	ctx.ContextFlags = CONTEXT_FULL;
+	GetThreadContext(core_handles[0], &ctx);
 
-	SetThreadContext(target_core, &ctx);
-	while (ResumeThread(target_core))
+	ctx.Eip = (DWORD) cpu_int_table_routines[0][INT_SCHEDULER];
+
+	SetThreadContext(core_handles[0], &ctx);
+	while (ResumeThread(core_handles[0]))
 		;
 }
 
@@ -86,8 +101,10 @@ DWORD WINAPI core_int_thread_entry(void *param)
 
 		switch (num) {
 		case INT_SCHEDULER:
+			core_do_schedule();
+			break;
 		case INT_RESCHEDULE:
-			core_do_interrupt(cpu_int_table_routines[core_number][num], core_number);
+			core_do_reschedule(core_number);
 			break;
 		case INT_CORE_TERM:
 			int_thread_running[core_number] = false;

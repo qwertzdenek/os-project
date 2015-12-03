@@ -25,15 +25,13 @@ __declspec(naked) void do_schedule()
 		mov esp, [ebx].stack_top
 
 		call scheduler_run
-		push eax
+		mov esp, eax
 	}
 
 	semaphore_V(sched_lock, 1);
 
 	__asm
 	{
-		pop esp
-
 		; pop general registers
 		popad
 
@@ -44,29 +42,24 @@ __declspec(naked) void do_schedule()
 	}
 }
 
+// set ecx to target core before
 __declspec(naked) void do_reschedule()
 {
 	__asm
 	{
-		call actual_core
-		mov ecx, eax
 		mov eax, 4; pointer is 4 bytes
 		mov ebx, INTERRUPT_COUNT
 		mul ebx
-		mov ebx, ecx; core number
+		mov ebx, ecx
 		mul ebx
 		lea ebx, cpu_int_table_messages[eax + 4]
-		push ebx
+		mov esp, dword ptr[ebx]
 	}
 
 	semaphore_V(sched_lock, 1);
 
 	__asm
 	{
-		pop ebx
-		mov esp, dword ptr[ebx]
-		mov dword ptr[ebx], 0
-
 		popad
 		popfd
 
