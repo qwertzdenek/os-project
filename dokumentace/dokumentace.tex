@@ -12,6 +12,9 @@
 %\usepackage[utf8x]{inputenc}		% nastavení vstupního kódování na UTF8
 %\usepackage[T1]{fontenc}		% kodování fontu pro výsledný dokument
 
+\usepackage{listings}
+\lstset{language=C++, numbers=left, backgroundcolor=\color{Azure}}
+
 % podpora jazyků
 \usepackage{polyglossia}
 
@@ -24,7 +27,7 @@
 \usepackage{hyperref}
 
 % pro definování vlastních barev - lepší než color
-\usepackage{xcolor}						
+\usepackage[svgnames]{xcolor}						
 
 % pro více obrázků u sebe s jednou popiskou
 \usepackage{subcaption}		
@@ -150,8 +153,114 @@
 
 \section{Řešení}
 
+\subsection{Virtuální SMP}
+Spouštění procesoru probíhá obdobně jako u reálného procesoru. Vstupem je procedura
+\verb+hardware_start+. Nejdříve se inicializuje
+systém obsluh přerušení. Každé přerušení je mapováno na samostatný Handler
+hostitelského systému. Použil jsem úplně základní Event. Ten je v počátečním stavu
+nesignalizovaný. Každé přerušení lze také zamaskovat a má svojí obslužnou rutinu.
+
+V naší aplikaci jsou k dispozici následují přerušení.
+
+\begin{description}
+\item{INT\_SCHEDULER} Přepnutí plánovače. Běží typicky na prvním procesoru. Ostatní
+jádra mají toto přerušení zamaskované.
+\item{INT\_RESCHEDULE} Přepnutí úlohy na procesoru. Přerušení očekává adresu
+zásobníku v příslušné zprávě.
+\item{INT\_CORE\_TERM} Ukončení jádra.
+\item{INT\_CORE\_RESUME} Opětovné spuštění. Používá plánovač.
+\item{INT\_CORE\_SUSPEND} Pozastavení jádra.
+\end{description}
+
+Prvním vzniklým vláknem je vlákno hardwarového přerušení, které slouží k signalizaci
+plánovače. Stará se také o životní cyklus celé simulace SMP. Toto vlákno simuluje
+fyzické zapojení a tedy běží s nejvyšší prioritou.
+
+Každé jádro má svoje vlákno obsluhy přerušení. To odpovídá hodinám, kde nebyly třeba
+ve své původní podobě, protože instrukce obslužného jádra běží nezávisle na hodinách
+jako nativní kód. Při inicializaci vlákna obsluhy přerušení vznikne, také fyzické jádro.
+
+Dále se inicializuje plánovač. To je také první úloha, která se spustí na prvním procesoru.
+Plánovač si vytvoří základní kontext, ze kterého pak vznikají další odvozené. Mimo inicializace
+paměti vytvoří první přerušení plánovače. Plánovač zavede první jádro a začně provádět
+svůj kód. Více o plánovači v další části.
+
+Vypnutí procesoru zajistí procedura \verb+power_button+. Ve skutečnosti vznikne event,
+nakterý obslužné vlákno hardwarového přerušení zareaguje a rozešle sadu přerušení pro
+ukončení všech jader. Jakmile je procesor ukončen, provede ukončení všech otevřených
+handlerů přerušení.
+
+\subsection{Obsluha přerušení}
+V předchozí sekci jsem se již zmínil o technickém provedení přerušení. Využím tedy systémové
+události, na které čekám pomocí \verb+WaitForMultipleObjects+. Některá přerušení mají
+obsluhu, která běží na cílovém procesoru, ale některá slouží k ovládání jádra.
+V této aplikaci jsme si vystačili s obsluhou plánovače a přeplánování.
+
+Přerušení plánovače nejdříve získá vnitřní zámek plánovače aby nedocházelo k souběhu
+se některým systémovým voláním. Pak pozastaví všechna jádra a uloží jejich kontext.
+Díky tomu je možné přeskládat úlohy s jejich aktuálním stavem. Kontext na zásobníku
+obsahuje návratovou adresu tj. následující instrukce úlohy, stavové vlajky a pak všechny
+registry v pořadí jak je vyžaduje instrukce \texttt{popad}.
+
+\subsection{Plánovač}
+Organizace dat.
+Strategie.
+Služby: vytvoření tasku, end task callback, core pause/resume.
+
+\subsection{Životní cyklus úlohy}
+Kde se nachází v plánovači.
+Napojení na předchozí kapitolu v příkladech.
+
+\subsection{Systémová volání}
+Princip.
+Vysvětlenní třeba task\_common\_pointers
+
+\subsection{Synchronizační primitiva}
+Obecný semafor.
+
+\begin{lstlisting}
+void semaphore_V(semaphore_t &s, int value)
+{
+	s._value += value;
+}
+\end{lstlisting}
+\begin{lstlisting}
+int semaphore_P(semaphore_t &s, int value)
+{
+	int expected;
+	int old;
+
+	do {
+		do {
+			old = s._value;
+			expected = old - value;
+		} while (expected < 0);
+	} while (!s._value.compare_exchange_weak(
+		old, expected,
+		std::memory_order_release,
+		std::memory_order_relaxed));
+
+	return expected;
+}
+\end{lstlisting}
+
+
+\section{Vzorové úlohy}
+
 \section{Závěr}
-Zadání se podařilo splnit. 
+Při vypracování této úlohy jsme narazili na mnoho problémů, které je třeba
+řešit a prozkoumali jsme základní úlohu operačního systému a to sdílení réalného času.
+Využili jsme jak vysokoúrovňového C++, tak Assembleru. Zaměřili jsme se na starší
+archetekturu Intel x86, protože nevyužívá velké množství registrů než 64 bitová
+následovník. Z tohoto důvodu zmizely zásadní instrukce \texttt{popad} a \texttt{popfd},
+které přečtou zásobník a přepíší registry. Na reálném procesoru je obsluha přerušení řešena
+hardwarově a proto je možné obsluhovat s takovou rychlostí.
+
+Bylo třeba dát si pozor co skutečně překladač vytvoří. Narazil jsem na problém, když jsem
+měl nastavený malý zásobník a překladač tiše předpokládal větší. Pak nastalo k překryvu
+adresního prostoru zásobníku a datového segmentu. Překladač totiž zahrnuje do kódu různé
+čištění paměti pomocí instrukce \verb+rep stos+. Všechny takové chyby se vždycky projeví
+později na nečekaném místě.
 
 \begin{thebibliography}{9}
 
