@@ -2,8 +2,18 @@
 
 #include <array>
 #include <memory>
+#include <cmath>
+#include <random>
+
+#include <string>
+#include <sstream>
+#include <fstream>
+#include <iostream>
+
 #include "buffer.h"
 #include "synchro.h"
+
+#define PRECISION 0.01
 
 #define TASK_STACK_SIZE 1024*1024
 
@@ -21,6 +31,15 @@ struct task_common_pointers {
 	semaphore_t mutex;
 
 	circular_buffer buffer;
+
+    volatile bool can_run;
+    double mean;
+    double deviation;
+};
+
+struct task_run_parameters {
+    double mean;
+    double deviation;
 };
 
 struct task_control_block {
