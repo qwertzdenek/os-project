@@ -216,14 +216,19 @@ Princip.
 Vysvětlenní třeba task\_common\_pointers
 
 \subsection{Synchronizační primitiva}
-Obecný semafor.
+Pro potřeby jak úloh, tak vnitřních struktur bylo potřeba implementovat vlastní
+semafor. Knihovní funkce totiž nefungují. Z pohledu systému máme pouze 4 vlákna
+procesoru, ale ve skutečnosti synchronizujeme mezi neexistujícími úlohami.
 
-\begin{lstlisting}
-void semaphore_V(semaphore_t &s, int value)
-{
-	s._value += value;
-}
-\end{lstlisting}
+Definovali jsme tedy strukturu \texttt{semaphore\_t}, která uchovává aktuální hodnotu
+semaforu. Vzhledem k tomu že jde o celočíselnou hodnotu, je přiřazení atomické (pokud je
+zaručeno zarovnání). Pro jistotu jsem ještě přidal prefix volatile.
+
+Zkoušel jsem použít C++11 atomic volání, ale to jsem opustil, protože docházelo
+k nevysvětlitelnému chování \verb+__RTC_CheckEsp+, které je vkládáno. Tělo takového
+zámku je v následujícím výpisu. Nechávám zde pro snažší pochopení Assemblerové
+implementace.
+
 \begin{lstlisting}
 int semaphore_P(semaphore_t &s, int value)
 {
@@ -244,6 +249,39 @@ int semaphore_P(semaphore_t &s, int value)
 }
 \end{lstlisting}
 
+Kód semaforu byl použit následující (\texttt{synchro.cpp}):
+
+\lstset{language=[x86masm]{Assembler}}
+
+\begin{lstlisting}
+spin:
+	mov edx, s
+	mov edx, [edx]s._value
+	mov ebx, edx
+	sub ebx, value
+	js spin
+
+	mov eax, edx
+	; eax - old, actual [s], ebx - expected
+	mov ecx, s
+	lock cmpxchg[ecx]s._value, ebx
+	jnz spin
+	mov result, ebx
+\end{lstlisting}
+
+\lstset{language=C++}
+
+Vzhledem k tomu že jsem cílil na x86, mohl jsem použít inline assembly
+a obalit standardní funkcí.
+
+Uvolnění hodnoty semaforu je jednoduché:
+
+\begin{lstlisting}
+void semaphore_V(semaphore_t &s, int value)
+{
+	s._value += value;
+}
+\end{lstlisting}
 
 \section{Vzorové úlohy}
 
