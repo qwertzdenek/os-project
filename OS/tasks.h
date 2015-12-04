@@ -32,7 +32,7 @@ struct task_common_pointers {
 
 	circular_buffer buffer;
 
-    volatile bool can_run;
+    std::atomic<bool> can_run;
     double mean;
     double deviation;
 };
