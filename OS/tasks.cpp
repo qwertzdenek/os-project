@@ -7,10 +7,8 @@ const std::string task_state_names[] = { "RUNNABLE", "BLOCKED", "RUNNING", "TERM
 
 const std::string task_type_names[] = { "RUNNER", "CONSUMENT", "PRODUCENT", "IDLE" };
 
-// TODO: here we can define loop end ("politely" stop the process)
-// Note: maybe we should pass and check some atomic parameter in common pointers..?
-bool canRun(task_common_pointers *in) {
-	return true;
+bool can_run(task_common_pointers *in) {
+    return in->can_run;
 }
 
 void *task_entry_points[4] = { task_main_runner, task_main_consument,
@@ -25,12 +23,18 @@ DWORD task_main_idle(void *)
 
 DWORD task_main_runner(void *in)
 {
+    task_run_parameters *params = (task_run_parameters *) in; // TODO: I need this here filled with parameters
 	// init common memory and call exec_task
 	std::shared_ptr<task_common_pointers> ptr(new task_common_pointers);
 
 	ptr->empty._value = ATOMIC_VAR_INIT(BUFFER_SIZE);
 	ptr->mutex._value = ATOMIC_VAR_INIT(1);
 	ptr->full._value = ATOMIC_VAR_INIT(0);
+        
+        ptr->mean = params->mean;
+        ptr->deviation = params->deviation;
+        
+        ptr->can_run = true;
 
 	int prod_id = exec_task(PRODUCENT, ptr);
 	int cons_id = exec_task(CONSUMENT, ptr);
@@ -42,68 +46,131 @@ DWORD task_main_runner(void *in)
 	return 0;
 }
 
-DWORD task_main_producent(void *in)
+DWORD task_main_producent(void *in) 
 {
-	task_common_pointers *task = (task_common_pointers *)in;
-	int i = 0;
 
-	double lambda = 1;
-	while (canRun(NULL)) {
-		double randomNumber = (double)rand() / RAND_MAX;
+    time_t now = time(0);
+    int id = 1; // TODO: process pid
 
-		double hyperexponential = log(1 - randomNumber) / -lambda;
+    std::ostringstream oss;
+    oss << "Task_producer_" << id << "_" << now << ".log";
 
-		semaphore_P(task->empty, 1);
+    std::string log_file_name = oss.str();
 
-		semaphore_P(task->mutex, 1);
+    std::string log_file_path = std::string("logs/") + log_file_name;
 
-		task->buffer.add(hyperexponential);
+    std::ofstream log_file(log_file_path);
 
-		//        TODO: to statistics
-		//        std::printf("+++ Producer added: %.2f\n", hyperexponential);
+    task_common_pointers *task = (task_common_pointers *) in;
 
-		semaphore_V(task->mutex, 1);
+    std::random_device rd;
+    std::default_random_engine generator;
+    std::normal_distribution<double> distribution(task->mean, task->deviation);
 
-		semaphore_V(task->full, 1);
+    int i = 0;
+    while (can_run(task)) {
+        generator.seed(rd());
+        double generatedNumber = distribution(generator);
 
-		//        TODO: Do we need (or want) sleep for statistics and simulation?
-		//        std::this_thread::sleep_for(std::chrono::milliseconds(100));
-	}
+        semaphore_P(task->empty, 1);
+
+        semaphore_P(task->mutex, 1);
+
+        task->buffer.add(generatedNumber);
+
+        semaphore_V(task->mutex, 1);
+
+        semaphore_V(task->full, 1);
+
+        log_file << "Added: " << std::fixed << generatedNumber << std::endl;
+        log_file << "Buffer free space: " << (int) task->empty._value << std::endl;
+
+    }
+
+    log_file.close();
+
 
 	return 0;
 }
 
 DWORD task_main_consument(void *in)
 {
-	task_common_pointers *task = (task_common_pointers *)in;
 
-	double mean = 0;
-	double meanBefore = 0;
-	int countConsumed = 0;
+    time_t now = time(0);
+    int id = 2;
 
-	while (canRun(task)) {
-		// remove one place from buffer if any
-		semaphore_P(task->full, 1);
+    std::ostringstream oss;
+    oss << "Task_consumer_" << id << "_" << now << ".log";
 
-		semaphore_P(task->mutex, 1);
+    std::string log_file_name = oss.str();
 
-		double nr = task->buffer.remove();
+    std::string log_file_path = std::string("logs/") + log_file_name;
 
-		meanBefore = mean;
-		mean = meanBefore + (nr - meanBefore) / ++countConsumed;
+    std::ofstream log_file(log_file_path);
 
-		//        TODO: to statistics
-		//        std::printf("--- Consumer removed: %.2f, current mean %.5f\n", nr, mean);
+    task_common_pointers *task = (task_common_pointers *) in;
 
-		semaphore_V(task->mutex, 1);
+    double original_mean = task->mean;
+    double original_deviation = task->deviation;
 
-		// notify free space
-		semaphore_V(task->empty, 1);
+    double mean = 0;
+    double meanBefore = 0;
+    double variance = 0;
+    double deviation = 0;
+    double varianceBefore = 0;
 
-		//        TODO: Do we need (or want) sleep for statistics and simulation?
-		//        std::this_thread::sleep_for(std::chrono::milliseconds(80));
+    double mean_diff, deviation_diff;
 
-	}
+    int countConsumed = 0;
+
+    while (can_run(task)) {
+
+        // remove one number from buffer if any
+        semaphore_P(task->full, 1);
+
+        semaphore_P(task->mutex, 1);
+
+        double nr = task->buffer.remove();
+
+        semaphore_V(task->mutex, 1);
+
+        // notify free space
+        semaphore_V(task->empty, 1);
+
+        log_file << "Buffer contains " << (int) task->full._value << " numbers\n";
+
+        /* count needed values */
+        meanBefore = mean;
+        varianceBefore = variance;
+
+        mean = ((countConsumed * mean) + nr) / (countConsumed + 1);
+
+        variance = (countConsumed * (varianceBefore + pow(meanBefore, 2.0)) + pow(nr, 2.0)) / (countConsumed + 1) - pow(mean, 2.0);
+
+        deviation = sqrt(variance);
+
+        countConsumed++;
+
+        log_file << "Removed " << nr << std::endl;
+        log_file << "\tCounted mean " << mean << std::endl;
+        log_file << "\tCounted deviation: " << deviation << std::endl;
+
+        mean_diff = fabs(original_mean - mean);
+        deviation_diff = fabs(original_deviation - deviation);
+
+        if (mean_diff < PRECISION && deviation_diff < PRECISION) {
+            log_file << "Desired precision reached after " << countConsumed << " steps" << std::endl;
+            log_file << "\tDeviation difference: " << deviation_diff << std::endl;
+            log_file << "\tMean difference: " << mean_diff << std::endl;
+
+            // stop producer
+            task->can_run = false;
+        }
+
+
+    }
+    
+    log_file.close();
 
 	return 0;
 }
