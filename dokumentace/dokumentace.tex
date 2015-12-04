@@ -84,7 +84,7 @@
 	\begin{center}
 		\begin{Large}
 		
-		Západočeská univerzita v Plzni
+		Západočeská univerzita v~Plzni
 
 		\vspace*{0.2cm}
 		
@@ -102,7 +102,7 @@
 		\vspace*{2cm}
 		
 		% Název předmětu
-		{\Huge\bfseries Semestrální práce z předmětu Operační systémy}
+		{\Huge\bfseries Semestrální práce z~předmětu Operační systémy}
 
 		\vspace*{1cm}
 		
@@ -149,32 +149,30 @@
 
 \section{Zadání}
 
-\section{Návrh}
-
 \section{Řešení}
 
 \subsection{Virtuální SMP}
-Spouštění procesoru probíhá obdobně jako u reálného procesoru. Vstupem je procedura
+Spouštění procesoru probíhá obdobně jako u~reálného procesoru. Vstupem je procedura
 \verb+hardware_start+. Nejdříve se inicializuje
 systém obsluh přerušení. Každé přerušení je mapováno na samostatný Handler
-hostitelského systému. Použil jsem úplně základní Event. Ten je v počátečním stavu
+hostitelského systému. Použil jsem úplně základní Event. Ten je v~počátečním stavu
 nesignalizovaný. Každé přerušení lze také zamaskovat a má svojí obslužnou rutinu.
 
-V naší aplikaci jsou k dispozici následují přerušení.
+V~naší aplikaci jsou k~dispozici následují přerušení.
 
 \begin{description}
 \item{INT\_SCHEDULER} Přepnutí plánovače. Běží typicky na prvním procesoru. Ostatní
 jádra mají toto přerušení zamaskované.
 \item{INT\_RESCHEDULE} Přepnutí úlohy na procesoru. Přerušení očekává adresu
-zásobníku v příslušné zprávě.
+zásobníku v~příslušné zprávě.
 \item{INT\_CORE\_TERM} Ukončení jádra.
 \item{INT\_CORE\_RESUME} Opětovné spuštění. Používá plánovač.
 \item{INT\_CORE\_SUSPEND} Pozastavení jádra.
 \end{description}
 
-Prvním vzniklým vláknem je vlákno hardwarového přerušení, které slouží k signalizaci
-plánovače. Stará se také o životní cyklus celé simulace SMP. Toto vlákno simuluje
-fyzické zapojení a tedy běží s nejvyšší prioritou.
+Prvním vzniklým vláknem je vlákno hardwarového přerušení, které slouží k~signalizaci
+plánovače. Stará se také o~životní cyklus celé simulace SMP. Toto vlákno simuluje
+fyzické zapojení a tedy běží s~nejvyšší prioritou.
 
 Každé jádro má svoje vlákno obsluhy přerušení. To odpovídá hodinám, kde nebyly třeba
 ve své původní podobě, protože instrukce obslužného jádra běží nezávisle na hodinách
@@ -183,50 +181,159 @@ jako nativní kód. Při inicializaci vlákna obsluhy přerušení vznikne, tak�
 Dále se inicializuje plánovač. To je také první úloha, která se spustí na prvním procesoru.
 Plánovač si vytvoří základní kontext, ze kterého pak vznikají další odvozené. Mimo inicializace
 paměti vytvoří první přerušení plánovače. Plánovač zavede první jádro a začně provádět
-svůj kód. Více o plánovači v další části.
+svůj kód. Více o~plánovači v~další části.
 
 Vypnutí procesoru zajistí procedura \verb+power_button+. Ve skutečnosti vznikne event,
-nakterý obslužné vlákno hardwarového přerušení zareaguje a rozešle sadu přerušení pro
+na který obslužné vlákno hardwarového přerušení zareaguje a rozešle sadu přerušení pro
 ukončení všech jader. Jakmile je procesor ukončen, provede ukončení všech otevřených
 handlerů přerušení.
 
 \subsection{Obsluha přerušení}
-V předchozí sekci jsem se již zmínil o technickém provedení přerušení. Využím tedy systémové
-události, na které čekám pomocí \verb+WaitForMultipleObjects+. Některá přerušení mají
-obsluhu, která běží na cílovém procesoru, ale některá slouží k ovládání jádra.
-V této aplikaci jsme si vystačili s obsluhou plánovače a přeplánování.
+V~předchozí sekci jsem se již zmínil o~technickém provedení přerušení a to systémové
+události, na která čekám pomocí \verb+WaitForMultipleObjects+. Některá přerušení mají
+obsluhu, která běží na cílovém procesoru, ale některá slouží k~ovládání jádra.
+Z~těch co běží na jádře jsme si vystačili s~obsluhou plánovače a přeplánování.
 
-Přerušení plánovače nejdříve získá vnitřní zámek plánovače aby nedocházelo k souběhu
-se některým systémovým voláním. Pak pozastaví všechna jádra a uloží jejich kontext.
-Díky tomu je možné přeskládat úlohy s jejich aktuálním stavem. Kontext na zásobníku
+Přerušení plánovače \verb+INT_SCHEDULER+ nejdříve získá vnitřní zámek plánovače aby
+nedocházelo k~souběhu s~některým systémovým voláním. Pak pozastaví všechna jádra a uloží jejich kontext. Jádru je tím předložena instrukce obsluhy, která použije svůj zásobník plánovače.
+Plánovač pak vrazí přes registr EAX adresu následujícího zásobníku. Ten je načten běžnou cestou.
+Návrat do přerušené úlohy je přes instrukci RET. Na prvním procesoru vždy něco běží.
+
+Díky tomu je možné přeskládat úlohy s~jejich aktuálním stavem. Kontext na zásobníku
 obsahuje návratovou adresu tj. následující instrukce úlohy, stavové vlajky a pak všechny
-registry v pořadí jak je vyžaduje instrukce \texttt{popad}.
+registry v~pořadí jak je vyžaduje instrukce \texttt{popad}.
+
+Přerušení přeplánování \verb+INT_RESCHEDULE+ pozastaví cílové jádro a počká na zámek
+plánovače aby mohlo uložit celý kontext aktuálně běžícího vlákna. Z~matice zpáv si přečte
+cílový ESP, který vloží do kontextu jádra. Stejně tak jako v~předchozím případě. Vloží
+do EIP adresu obsluhy přeplánování. Cílové jádro je probuzeno.
+
+Obsluha přerušení je napsána v~Assembleru, aby byl zaručen minimální overhead. Využívám tak
+instrukce \texttt{popad} pro načtení obecných registrů a tak  \texttt{popfd} pro načtení vlajek.
 
 \subsection{Plánovač}
-Organizace dat.
-Strategie.
-Služby: vytvoření tasku, end task callback, core pause/resume.
+V~těle plánovače dojde nejdříve k~ověření zda nebylo pozastaveno nějaké jádro. To je
+způsobeno zavoláním voláním plánovače \verb+sched_request_resume+ a \verb+sched_request_pause+.
+Jakmile něco běží na pozastaveném procesoru, musí se to ukončit a uložit kontext.
+Tato úloha pak putuje na konec fronty úloh.
+
+Dále se mažou všechny úlohy které ukončily své tělo. Struktura TCB obsahuje destruktor,
+takže jsou v~tu chvíly uvolněny veškeré alokované prostředky.
+
+Ještě před spuštěním samotného plánovaní jsou načteny požadavky na nové úlohy. To zahrnuje
+vytvoření nového Task Control Block (TCB). O~inicializaci dat se stará funkce
+\verb+sched_create_task+. Zásobník musí být souvislý a zarovnaný. Vložíme do něj postupně:
+
+\begin{itemize}
+\item argument úlohy
+\item návratová adresa do endtask callbacku
+\item vstupní adresa úlohy
+\item vlajky
+\item obecné registry
+\end{itemize}
+
+Na hodnotách registrů nezáleží. Vkládám tam nějaké hodnoty abych poznal že
+se vše načítá správně. Dále je nastaven Task ID (TID), časové kvantum, stav Runnable,
+typ úlohy a také předávaná struktura, kvůli dealokaci paměti.
+
+Činnost plánovače je pro každé jádro stejná:
+
+\begin{itemize}
+\item ověříme zda je jádro povolené
+\item podíváme se do tabulky spuštěných procesů na proces co na jádru běží. Jestliže tam nic neběží
+pokračuje v~další části.
+\begin{itemize}
+\item ubereme mu časové kvantum TIME\_QUANTUM\_DECREASE
+\item pokud už běžící proces vyčerpal čas TIME\_QUANTUM, zařadí se do fronty procesů.
+IDLE task v~tu chvíli končí. Pokud kvantum nevypršelo je navrácen zpět mezi naplánované úlohy a pokračuje
+dalším jádrem.
+\end{itemize}
+\item podle fronty úloh
+\begin{itemize}
+\item Je-li prázdná a jsme na prvním procesoru, je spuštěn IDLE task. Jsme-li na jiném jádře. Je to
+jádro pozastaveno.
+\item máme-li čekající úlohu ve frontě, je vybrána jako následující
+\end{itemize}
+\item pokud je vybraná úloha ta stejná která tam byla před přeplánováním, je tato změna ignorována
+\item Nakonec proběhne samotné přerušení cílových jader a odeslání cílového ESP. První jádro je
+přeplánováno při návratu z~plánovače.
+\end{itemize}
 
 \subsection{Životní cyklus úlohy}
-Kde se nachází v plánovači.
-Napojení na předchozí kapitolu v příkladech.
+Nyní popíšem životní cyklus aplikace od jejího vzniku, stavy běhu a nakonec její
+ukončení. Naše schéma je na obrázku \ref{fig:state_diagram}. Z~běžného schématu
+vypadl stav blokovaný. Protože používáme aktivní čekání. Navíc nemám k~dispozici
+přerušení na úrovni instrukcí jen signalizaci. Musel bych jádro ručně zastavovat a
+to by mělo za následek neočekávané chování.
+
+\begin{figure}
+\centering
+\includegraphics[width=\textwidth]{obrazky/state_diagram.png}
+\caption{Stavový diagram úloh}
+\label{fig:state_diagram}
+\end{figure}
+
+Každý task může spouštět další úlohy a to pomocí volání \verb+exec_task()+. První
+parametr je typ a další je ukazatel na strukturu parametrů. Záleží na typu úlohy a
+může být NULL. Tento ukazatel může být sdílen mezi mnoha úlohy. Proto je také
+typován jako \verb+shared_ptr+ aby byl po skončení uklizen. Není hlídána cyklická
+reference.
+
+Jakmile se naplánuje plánovač projde frontu nových úloh, vytvoří jejich TCB a zařadí
+do fronty čekajících úloh v~\verb+task_queue+.
+
+Jakmile se na ní dostane řada, přejde do stavu RUNNING. Plánovač zajistí přepnutí úlohy.
+
+Každá úloha se může nacházet jen v~jedné z~těchto front. Proto je také TCB unikátní pointer.
+Jeho prostředky jsou tedy automaticky uvolněny po vymazání z~fronty
+\verb+exit_task_queue+. Do té se dostane při návratu z~hlavní procedury v~metodě
+\verb+end_task_callback()+. Ta je vložena do zásobníku při vytváření a tedy instrukce
+RET do ní skočí.
 
 \subsection{Systémová volání}
-Princip.
-Vysvětlenní třeba task\_common\_pointers
+Každé systémové volání je definováno v~modulu \verb+sched_calls+. K~dispozici
+je již zmíněné \verb+exec_task()+ a také \verb+get_tid()+. Tato volání jsou přímo
+mapována na volání plánovače. To je z~důvodu odstínění úloh od plánovače. Tyto
+volání jsou přesto volána synchronně a jsou co nejkratší.
+
+Jednotlivé úlohy získávají parametry ze struktur libovolného obsahu. Jmenovitě
+jsou to struktury:
+
+\begin{lstlisting}
+struct task_common_pointers {
+	semaphore_t full;
+	semaphore_t empty;
+	semaphore_t mutex;
+
+	circular_buffer buffer;
+
+	volatile bool can_run;
+	double mean;
+	double deviation;
+};
+\end{lstlisting}
+
+Ta slouží pro nastavení úloh PRODUCENT a CONSUMENT. Pro spuštění RUNNER je třeba naplnit:
+
+\begin{lstlisting}
+struct task_run_parameters {
+	double mean;
+	double deviation;
+};
+\end{lstlisting}
 
 \subsection{Synchronizační primitiva}
 Pro potřeby jak úloh, tak vnitřních struktur bylo potřeba implementovat vlastní
-semafor. Knihovní funkce totiž nefungují. Z pohledu systému máme pouze 4 vlákna
+semafor. Knihovní funkce totiž nefungují. Z~pohledu systému máme pouze 4 vlákna
 procesoru, ale ve skutečnosti synchronizujeme mezi neexistujícími úlohami.
 
 Definovali jsme tedy strukturu \texttt{semaphore\_t}, která uchovává aktuální hodnotu
-semaforu. Vzhledem k tomu že jde o celočíselnou hodnotu, je přiřazení atomické (pokud je
+semaforu. Vzhledem k~tomu že jde o~celočíselnou hodnotu, je přiřazení atomické (pokud je
 zaručeno zarovnání). Pro jistotu jsem ještě přidal prefix volatile.
 
 Zkoušel jsem použít C++11 atomic volání, ale to jsem opustil, protože docházelo
-k nevysvětlitelnému chování \verb+__RTC_CheckEsp+, které je vkládáno. Tělo takového
-zámku je v následujícím výpisu. Nechávám zde pro snažší pochopení Assemblerové
+k~nevysvětlitelnému chování \verb+__RTC_CheckEsp+, které je vkládáno. Tělo takového
+zámku je v~následujícím výpisu. Nechávám zde pro snažší pochopení Assemblerové
 implementace.
 
 \begin{lstlisting}
@@ -255,23 +362,23 @@ Kód semaforu byl použit následující (\texttt{synchro.cpp}):
 
 \begin{lstlisting}
 spin:
-	mov edx, s
-	mov edx, [edx]s._value
+	mov edx,
+s~mov edx, [edx]s._value
 	mov ebx, edx
 	sub ebx, value
 	js spin
 
 	mov eax, edx
 	; eax - old, actual [s], ebx - expected
-	mov ecx, s
-	lock cmpxchg[ecx]s._value, ebx
+	mov ecx,
+s~lock cmpxchg[ecx]s._value, ebx
 	jnz spin
 	mov result, ebx
 \end{lstlisting}
 
 \lstset{language=C++}
 
-Vzhledem k tomu že jsem cílil na x86, mohl jsem použít inline assembly
+Vzhledem k~tomu že jsem cílil na x86, mohl jsem použít inline assembly
 a obalit standardní funkcí.
 
 Uvolnění hodnoty semaforu je jednoduché:
@@ -290,15 +397,23 @@ Při vypracování této úlohy jsme narazili na mnoho problémů, které je tř
 řešit a prozkoumali jsme základní úlohu operačního systému a to sdílení réalného času.
 Využili jsme jak vysokoúrovňového C++, tak Assembleru. Zaměřili jsme se na starší
 archetekturu Intel x86, protože nevyužívá velké množství registrů než 64 bitová
-následovník. Z tohoto důvodu zmizely zásadní instrukce \texttt{popad} a \texttt{popfd},
+následovník. Z~tohoto důvodu zmizely zásadní instrukce \texttt{popad} a \texttt{popfd},
 které přečtou zásobník a přepíší registry. Na reálném procesoru je obsluha přerušení řešena
-hardwarově a proto je možné obsluhovat s takovou rychlostí.
+hardwarově a proto je možné obsluhovat s~takovou rychlostí.
 
 Bylo třeba dát si pozor co skutečně překladač vytvoří. Narazil jsem na problém, když jsem
-měl nastavený malý zásobník a překladač tiše předpokládal větší. Pak nastalo k překryvu
+měl nastavený malý zásobník a překladač tiše předpokládal větší. Pak nastalo k~překryvu
 adresního prostoru zásobníku a datového segmentu. Překladač totiž zahrnuje do kódu různé
 čištění paměti pomocí instrukce \verb+rep stos+. Všechny takové chyby se vždycky projeví
 později na nečekaném místě.
+
+Ukázalo se že plánovač Round Robin není skutečně přiliš optimální a bez řešení stavu
+blocked, je čas obrátky velmi dlouhý. Často se tak stane, že běží na procesoru jen jeden
+z~dvojice producent a konzument a tedy nedělá nic jiného než čeká. Plánovač by musel
+sledovat kdo je kým blokovaný a dávat je tedy k~sobě například prioritou.
+
+Tato práce byla velmi poučná, ale také časově náročná.
+
 
 \begin{thebibliography}{9}
 
