@@ -1,0 +1,3 @@
+Here are the logs of all runs of the program.
+Format of file names is:
+    Task_|role|_|process_pid|_|timestamp|.log
