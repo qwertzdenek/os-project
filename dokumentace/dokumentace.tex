@@ -22,7 +22,7 @@
 %\usepackage[pdftex]{graphicx}			
 
 % pro podporu výpisů programu
-\usepackage{listings}	
+\usepackage{listings}
 
 \usepackage{hyperref}
 
@@ -122,8 +122,8 @@
 	% neodsazovat první řádku kontaktu
 	\noindent
 	Zdeněk Janeček \\ 
-	david.fido.fiedler@gmail.com \\
-	A14N0111P \\
+	janecekz@students.zcu.cz \\
+	A14N0112P \\
 	Plzeň, \number\day. \number\month. \number\year
 
 	\vspace*{0.2cm}	
@@ -137,9 +137,9 @@
 	\vspace*{0.2cm}	
 	
 	\noindent
-	Tomáš Cígler \\ 
-	david.fido.fiedler@gmail.com \\
-	A14N0111P \\
+	Tomáš Cigler \\ 
+	tcigler@students.zcu.cz \\
+	A14N0110P \\
 	Plzeň, \number\day. \number\month. \number\year
 
 \rmfamily	% odtud se opět píše patkovým písmem
@@ -149,7 +149,25 @@
 
 \section{Zadání}
 
-\section{Řešení}
+Cílem semestrální práce je vytvořit simulátor 4 jádrového SMP, pro který se vytvoří plánovač a implementace semaforů.
+Semafory budou implementovány tzv. spinlockem a pouze tyto mohou být následně použity k~synchornizaci procesů.
+
+Pro každý procesor bude vytvořeno vlákno simulující obsluhu přerušení hodin, ve kterém se bude měnit kontext pracovního vlákna. Pracovní vlákno bude simulovat fyzický procesor. Na výběr je buď vytvořit idle procesy v~počtu procesorů, aby bylo co plánovat, když bude málo runnable threadů, anebo naimplementovat halt stav procesoru. Nesmí se ovšem zastavit všechny procesory - alespoň jeden musí zůstat vzhůru - tj. minimálně jeden idle proces musí být.
+
+V~systému bude spuštěno osm úloh producent - konzument. Producent bude generovat náhodná čísla v~plovoucí čárce s~normálním rozdělením dle zadaných parametrů. Konzument z~nich bude průběžně počítat parametry normálního rozdělení.
+Průběžně se bude ukazovat konvergence vypočítaných parametrů k~zadaným, včetně počtu zpracovaných hodnot.
+
+Bude vytvořeno rozhraní, kterým bude možné pozastavovat jednotlivé thready, a celkově program ovládat. Ukazujte využití jednotlivých procesorů.
+
+Tato aplikace z~povahy zadání bude cílena jen na architekturu \emph{Intel x86}.
+
+\section{Návrh}
+Prvním krokem je běžící procesor. Každé jádro je jedno běžící vlákno, na němž se provádí instrukce = úlohy. Plánovač je také úloha, proto by měl být pomocí přerušení plánován na procesor. Jelikož máme použít metodu RoundRobin, stačilo pouze přerušení po časovém limitu. Pro udržení procesoru v~běhu jsme zvolili jeden idle task.
+
+Plánem bylo izolovat úlohy od procesoru i plánovače - na instrukcích dané úlohy nezáleží a musí běžet a plánovat se plně nezávisle. Úloha producenta a konzumenta ale přesto musí být spolu v~kontaktu. Následně musí být jednoduché jejich spuštění a zastavování z~konzole.
+Z~toho důvodu jsme se vydali směrem společné procedury pro vytvoření úloh. Prvních osm běžících úloh bude vytvořeno ihned po startu celého systému a naplánováno pro běh.
+
+Konzole bude jakési středisko tohoto systému, které bude monitorovat stav procesoru, resp. jader a následně poskytne možnost ovládat plánovač. Postupem spouštění by to měl být jakýsi jednoduchý počítač. O~vypisování statistik týkajících se běžících úloh se starají následně úlohy samotné.
 
 \subsection{Virtuální SMP}
 Spouštění procesoru probíhá obdobně jako u~reálného procesoru. Vstupem je procedura
@@ -163,7 +181,7 @@ V~naší aplikaci jsou k~dispozici následují přerušení.
 \begin{description}
 \item{INT\_SCHEDULER} Přepnutí plánovače. Běží typicky na prvním procesoru. Ostatní
 jádra mají toto přerušení zamaskované.
-\item{INT\_RESCHEDULE} Přepnutí úlohy na procesoru. Přerušení očekává adresu
+\item{INT\_RESCHEDULE} Přepnutí úlohy na procesoru. Toto přerušení očekává adresu
 zásobníku v~příslušné zprávě.
 \item{INT\_CORE\_TERM} Ukončení jádra.
 \item{INT\_CORE\_RESUME} Opětovné spuštění. Používá plánovač.
@@ -176,14 +194,14 @@ fyzické zapojení a tedy běží s~nejvyšší prioritou.
 
 Každé jádro má svoje vlákno obsluhy přerušení. To odpovídá hodinám, kde nebyly třeba
 ve své původní podobě, protože instrukce obslužného jádra běží nezávisle na hodinách
-jako nativní kód. Při inicializaci vlákna obsluhy přerušení vznikne, také fyzické jádro.
+jako nativní kód. Při inicializaci vlákna obsluhy přerušení vznikne také fyzické jádro.
 
-Dále se inicializuje plánovač. To je také první úloha, která se spustí na prvním procesoru.
+Dále se inicializuje plánovač. To je první úloha, která se spustí na prvním procesoru.
 Plánovač si vytvoří základní kontext, ze kterého pak vznikají další odvozené. Mimo inicializace
 paměti vytvoří první přerušení plánovače. Plánovač zavede první jádro a začně provádět
 svůj kód. Více o~plánovači v~další části.
 
-Vypnutí procesoru zajistí procedura \verb+power_button+. Ve skutečnosti vznikne event,
+Vypnutí procesoru zajistí procedura \verb+power_button+. Ve skutečnosti vznik\-ne event,
 na který obslužné vlákno hardwarového přerušení zareaguje a rozešle sadu přerušení pro
 ukončení všech jader. Jakmile je procesor ukončen, provede ukončení všech otevřených
 handlerů přerušení.
@@ -218,7 +236,7 @@ Jakmile něco běží na pozastaveném procesoru, musí se to ukončit a uložit
 Tato úloha pak putuje na konec fronty úloh.
 
 Dále se mažou všechny úlohy které ukončily své tělo. Struktura TCB obsahuje destruktor,
-takže jsou v~tu chvíly uvolněny veškeré alokované prostředky.
+takže jsou v~tu chvíly uvolněny veškeré alokované pro\-středky.
 
 Ještě před spuštěním samotného plánovaní jsou načteny požadavky na nové úlohy. To zahrnuje
 vytvoření nového Task Control Block (TCB). O~inicializaci dat se stará funkce
@@ -260,10 +278,10 @@ přeplánováno při návratu z~plánovače.
 \end{itemize}
 
 \subsection{Životní cyklus úlohy}
-Nyní popíšem životní cyklus aplikace od jejího vzniku, stavy běhu a nakonec její
+Nyní popíšeme životní cyklus aplikace od jejího vzniku, stavy běhu a nakonec její
 ukončení. Naše schéma je na obrázku \ref{fig:state_diagram}. Z~běžného schématu
-vypadl stav blokovaný. Protože používáme aktivní čekání. Navíc nemám k~dispozici
-přerušení na úrovni instrukcí jen signalizaci. Musel bych jádro ručně zastavovat a
+vypadl stav blokovaný, protože používáme aktivní čekání. Navíc není k~dispozici
+přerušení na úrovni instrukcí, ale pouze signalizace. Jádro by se muselo ručně zastavovat a
 to by mělo za následek neočekávané chování.
 
 \begin{figure}
@@ -273,19 +291,18 @@ to by mělo za následek neočekávané chování.
 \label{fig:state_diagram}
 \end{figure}
 
-Každý task může spouštět další úlohy a to pomocí volání \verb+exec_task()+. První
-parametr je typ a další je ukazatel na strukturu parametrů. Záleží na typu úlohy a
-může být NULL. Tento ukazatel může být sdílen mezi mnoha úlohy. Proto je také
-typován jako \verb+shared_ptr+ aby byl po skončení uklizen. Není hlídána cyklická
+Každá úloha může spouštět jiné úlohy, a to pomocí volání \verb+exec_task()+. Prvním
+parametrem funkce je typ úlohy a další je ukazatel na strukturu parametrů. Záleží na typu úlohy a
+může být i NULL. Tento ukazatel může být mezi úlohami samozřejmě sdílen. Proto je také
+typován jako \verb+shared_ptr+ aby byl po skončení "uklizen". Není hlídána cyklická
 reference.
 
 Jakmile se naplánuje plánovač projde frontu nových úloh, vytvoří jejich TCB a zařadí
 do fronty čekajících úloh v~\verb+task_queue+.
-
-Jakmile se na ní dostane řada, přejde do stavu RUNNING. Plánovač zajistí přepnutí úlohy.
+Až se na ni dostane řada, přejde do stavu RUNNING. Plánovač zajistí přepnutí úlohy.
 
 Každá úloha se může nacházet jen v~jedné z~těchto front. Proto je také TCB unikátní pointer.
-Jeho prostředky jsou tedy automaticky uvolněny po vymazání z~fronty
+Jeho prostředky jsou automaticky uvolněny po vymazání z~fronty
 \verb+exit_task_queue+. Do té se dostane při návratu z~hlavní procedury v~metodě
 \verb+end_task_callback()+. Ta je vložena do zásobníku při vytváření a tedy instrukce
 RET do ní skočí.
@@ -390,7 +407,41 @@ void semaphore_V(semaphore_t &s, int value)
 }
 \end{lstlisting}
 
-\section{Vzorové úlohy}
+\subsection{Konzole}
+
+\begin{figure}
+\centering
+\includegraphics[width=\textwidth]{obrazky/screen.png}
+\caption{Screenshot obrazovky}
+\label{fig:screen}
+\end{figure}
+
+Konzole slouží k~ovládání a monitorování běhu systému. Uživatel zadá příkaz a podle něj se vyvolá obsluha.
+Příklad je na obrázku \ref{fig:screen}.
+
+\begin{itemize}
+\item exit: vypne program
+\item start: spustí úlohu
+\item help: ukáže nápovědu
+\item show: ukáže informace o~běžících procesech,čekajících procesech a obsazenosti CPU
+\item pause-core: pozastaví jádro procesoru
+\item resume-core: znovu spustí jádro procesoru
+\end{itemize}
+
+\section{Referenční úlohy}
+
+Pro otestování funkčnosti celého systému byl podle zadání vytvořen vzor úlohy producent - konzument tak, že producent vytváří
+náhodná čísla z~normálního (Gaussovského) rozdělení. Konzument tato čísla zpracovává a počítá inkrementálně zpětně parametry rozdělení, což je střední hodnota a rozptyl.
+
+Aby mohly úlohy spolupracovat, je třeba nastavit jim společné parametry. Mezi ně patří cyklický buffer, přes který
+předává producent konzumentovi vygenerovaná čísla. Přístup do bufferu a ochrana před přetečením je řízen dvěma semafory.
+Jeden semafor slouží pro udržení počtu prázdných, druhý k~počtu obsazených míst bufferu. Třetí semafor je binární a zajišťuje synchronizaci při přístupu do kritické sekce, kde se vybírá číslo přítomné v~bufferu.
+
+Tyto semafory jsou inicializovány ještě před spuštěním samotných úloh. Jak již bylo řečeno, spuštění obou těchto úloh
+zajišťuje pouze jedna funkce, a to \verb+task_main_runner+. Do té se předají parametry rozdělení, uvnitř se inicializují všechny společné parametry a vytvoří se obě úlohy. Tento přístup je výhodný také z~důvodu možnosti vytvoření této dvojice úloh z~uživatelské konzole.
+
+Reálné parametry rozdělení musí znát i konzument, aby bylo jasné, kdy má úloha skončit. Inkrementálním způsobem se parametry počítají tak dlouho, dokud přesnost výpočtu podléhá větší chybě, než je povolená tolerance. Vzhledem k~zaokrouhlovacím chybám, nepřesnosti číselných typů a diskrétním hodnotám generování není konvergence příliš rychlá. Nicméně při toleranci řádově v~setinách se původním parametrům přiblíží výpočet již po několika tisísích vzorcích. Po dosažení přesnosti signalizuje konzument producentovi ukončení.
+
 
 \section{Závěr}
 Při vypracování této úlohy jsme narazili na mnoho problémů, které je třeba
@@ -413,16 +464,6 @@ z~dvojice producent a konzument a tedy nedělá nic jiného než čeká. Plánov
 sledovat kdo je kým blokovaný a dávat je tedy k~sobě například prioritou.
 
 Tato práce byla velmi poučná, ale také časově náročná.
-
-
-\begin{thebibliography}{9}
-
-\bibitem[1]{Wikibooks}
-{\em Wikipedia contributors} \\
-{\bf "LaTex" Wikibooks - open book for an open world} \\
-\url{http://en.wikibooks.org/wiki/LaTeX} \\
-
-\end{thebibliography}
 
 \end{document} 
 
