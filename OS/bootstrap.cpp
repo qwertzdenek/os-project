@@ -66,8 +66,10 @@ void cpu_stop()
 	for (int core = 0; core < CORE_COUNT; core++)
 	{
 		// stop it and wait
-		SetEvent(cpu_int_table_handlers[core][INT_CORE_TERM]);
-		WaitForSingleObject(core_int_handles[core], INFINITE);
+		do
+		{
+			SetEvent(cpu_int_table_handlers[core][INT_CORE_TERM]);
+		} while (WaitForSingleObject(core_int_handles[core], 200) == WAIT_TIMEOUT);
 
 		for (int i = 0; i < INTERRUPT_COUNT; i++)
 		{
@@ -82,7 +84,7 @@ DWORD __stdcall hardware_entry(void *)
 	cpu_init();
 	init_scheduler();
 
-	while (WaitForSingleObject(power_button_event, 500) != WAIT_OBJECT_0)
+	while (WaitForSingleObject(power_button_event, 400) != WAIT_OBJECT_0)
 	{
 		SetEvent(cpu_int_table_handlers[0][INT_SCHEDULER]);
 	}

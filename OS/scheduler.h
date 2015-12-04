@@ -13,7 +13,7 @@ DWORD scheduler_run(void *);
 
 bool sched_active_task(int core);
 void sched_store_context(int core);
-uint32_t sched_request_task(task_type type, std::shared_ptr<task_common_pointers> data);
+uint32_t sched_request_task(task_type type, std::shared_ptr<void> data);
 bool sched_request_pause(int core);
 bool sched_request_resume(int core);
 

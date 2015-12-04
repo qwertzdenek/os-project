@@ -4,15 +4,15 @@
 #include <memory>
 #include <deque>
 #include <list>
+#include <iostream>
 
 #include "scheduler.h"
 #include "tasks.h"
 #include "core.h"
 #include "interrupts.h"
 
-
-#define TIME_QUANTUM 100
-#define TIME_QUANTUM_DECREASE 25
+#define TIME_QUANTUM 200
+#define TIME_QUANTUM_DECREASE 50
 
 // actual assigned tasks
 static std::unique_ptr<task_control_block> running_tasks[CORE_COUNT];
@@ -27,6 +27,7 @@ static std::list<std::unique_ptr<new_task_req>> new_task_queue;
 static std::deque<std::unique_ptr<task_control_block>> exit_task_queue;
 
 semaphore_t sched_lock;
+semaphore_t sched_new_task_lock;
 
 static uint32_t task_counter = 0;
 static CONTEXT default_context;
@@ -39,14 +40,15 @@ void sched_end_task_callback()
 {
 	int core = actual_core();
 
-	semaphore_P(sched_lock, 1);
+	std::cout << "task " << task_type_names[running_tasks[core]->type];
+	std::cout << " id " << running_tasks[core]->task_id << " exited" << std::endl;
+
 	exit_task_queue.push_back(std::move(running_tasks[core]));
 
 	if (task_queue.empty())
 	{
 		// interrupt scheduler
 		SetEvent(cpu_int_table_handlers[0][INT_SCHEDULER]);
-		semaphore_V(sched_lock, 1);
 		SuspendThread(GetCurrentThread());
 	}
 	else
@@ -58,7 +60,6 @@ void sched_end_task_callback()
 
 		next_task->state = RUNNING;
 		running_tasks[core] = std::move(next_task);
-		semaphore_V(sched_lock, 1);
 
 		__asm
 		{
@@ -107,7 +108,7 @@ bool sched_active_task(int core)
 }
 
 // returns new task id
-uint32_t sched_request_task(task_type type, std::shared_ptr<task_common_pointers> data)
+uint32_t sched_request_task(task_type type, std::shared_ptr<void> data)
 {
 	uint32_t task_id;
 	std::unique_ptr<new_task_req> request(new new_task_req);
@@ -117,9 +118,9 @@ uint32_t sched_request_task(task_type type, std::shared_ptr<task_common_pointers
 	request->task_id = task_counter++;
 	task_id = request->task_id;
 	
-	semaphore_P(sched_lock, 1);
+	semaphore_P(sched_new_task_lock, 1);
 	new_task_queue.push_back(std::move(request));
-	semaphore_V(sched_lock, 1);
+	semaphore_V(sched_new_task_lock, 1);
 
 	return task_id;
 }
@@ -186,6 +187,8 @@ DWORD scheduler_run(void *ptr)
 	bool context_changed[CORE_COUNT];
 	memset(&context_changed, 0, CORE_COUNT * sizeof(bool));
 
+	cpu_int_table_masked[0][INT_SCHEDULER] = true;
+
 	// pause and resume requests
 	for (int core = 0; core < CORE_COUNT; core++)
 	{
@@ -211,6 +214,7 @@ DWORD scheduler_run(void *ptr)
 	}
 
 	// check for new tasks
+	semaphore_P(sched_new_task_lock, 1);
 	while (!new_task_queue.empty())
 	{
 		std::unique_ptr<new_task_req> task_request(std::move(new_task_queue.front()));
@@ -220,6 +224,7 @@ DWORD scheduler_run(void *ptr)
 		sched_create_task(*tcb, *task_request);
 		task_queue.push_back(std::move(tcb));
 	}
+	semaphore_V(sched_new_task_lock, 1);
 
 	for (int core = 0; core < CORE_COUNT; core++)
 	{
@@ -313,6 +318,8 @@ DWORD scheduler_run(void *ptr)
 			SetEvent(cpu_int_table_handlers[core][INT_RESCHEDULE]);
 		}
 	}
+
+	cpu_int_table_masked[0][INT_SCHEDULER] = false;
 
 	return target_contexts[0].Esp;
 }

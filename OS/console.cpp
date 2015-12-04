@@ -1,6 +1,3 @@
-// console.cpp : Defines the entry point for the console application.
-//
-
 #include "stdafx.h"
 
 #include <iostream>
@@ -10,10 +7,6 @@
 #include "sched_calls.h"
 #include "cpu.h"
 #include "scheduler.h"
-
-#define CRTDBG_MAP_ALLOC
-#include <stdlib.h>
-#include <crtdbg.h>
 
 char *help()
 {
@@ -36,8 +29,6 @@ char *help()
 
 int main(int argc, char *argv[], char *envp[])
 {
-	_CrtSetDbgFlag(_CRTDBG_ALLOC_MEM_DF | _CRTDBG_LEAK_CHECK_DF);
-
 	bool help_flag = false;
 
 	for (int i = 1; i < argc; i++)
@@ -61,14 +52,14 @@ int main(int argc, char *argv[], char *envp[])
 	std::string input;
 	int core_number;
 
-	exec_task(RUNNER, NULL);
-	exec_task(RUNNER, NULL);
-	exec_task(RUNNER, NULL);
-	exec_task(RUNNER, NULL);
-	exec_task(RUNNER, NULL);
-	exec_task(RUNNER, NULL);
-	exec_task(RUNNER, NULL);
-	exec_task(RUNNER, NULL);
+	exec_task(RUNNER, std::make_shared<task_run_parameters>(1, 2));
+	exec_task(RUNNER, std::make_shared<task_run_parameters>(1, 3));
+	exec_task(RUNNER, std::make_shared<task_run_parameters>(2, 2));
+	exec_task(RUNNER, std::make_shared<task_run_parameters>(0, 2));
+	exec_task(RUNNER, std::make_shared<task_run_parameters>(1, 1));
+	exec_task(RUNNER, std::make_shared<task_run_parameters>(5, 2));
+	exec_task(RUNNER, std::make_shared<task_run_parameters>(4, 1));
+	exec_task(RUNNER, std::make_shared<task_run_parameters>(3, 2));
 
 	// boot up
 	hardware_start();
@@ -86,7 +77,7 @@ int main(int argc, char *argv[], char *envp[])
 		}
 		else if (input == "start")
 		{
-			exec_task(RUNNER, NULL);
+			exec_task(RUNNER, std::make_shared<task_run_parameters>(1, 2));
 		}
 		else if (input == "help")
 		{

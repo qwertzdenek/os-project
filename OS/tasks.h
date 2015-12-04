@@ -40,6 +40,8 @@ struct task_common_pointers {
 struct task_run_parameters {
     double mean;
     double deviation;
+
+	task_run_parameters(double mean, double deviation) : mean(mean), deviation(deviation) {}
 };
 
 struct task_control_block {
@@ -49,7 +51,7 @@ struct task_control_block {
 	int quantum;
 	task_state state;
 	task_type type;
-	std::shared_ptr<task_common_pointers> data;
+	std::shared_ptr<void> data;
 
 	task_control_block() { stack = _aligned_malloc(TASK_STACK_SIZE, 64); }
 	~task_control_block() { _aligned_free(stack); }
@@ -58,7 +60,7 @@ struct task_control_block {
 struct new_task_req {
 	uint32_t task_id;
 	task_type type;
-	std::shared_ptr<task_common_pointers> tcp;
+	std::shared_ptr<void> tcp;
 };
 
 DWORD task_main_consument(void *);
