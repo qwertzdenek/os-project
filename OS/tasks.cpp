@@ -35,9 +35,6 @@ DWORD task_main_runner(void *in)
 	int prod_id = exec_task(PRODUCENT, ptr);
 	int cons_id = exec_task(CONSUMENT, ptr);
 
-	std::cout << "runner " << get_tid() << " launched tasks ";
-	std::cout << prod_id << " and " << cons_id << std::endl;
-
 	return 0;
 }
 

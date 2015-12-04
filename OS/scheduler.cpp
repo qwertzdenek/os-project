@@ -43,11 +43,13 @@ void sched_end_task_callback()
 	std::cout << "task " << task_type_names[running_tasks[core]->type];
 	std::cout << " id " << running_tasks[core]->task_id << " exited" << std::endl;
 
+	semaphore_P(sched_lock, 1);
 	exit_task_queue.push_back(std::move(running_tasks[core]));
 
 	if (task_queue.empty())
 	{
 		// interrupt scheduler
+		semaphore_V(sched_lock, 1);
 		SetEvent(cpu_int_table_handlers[0][INT_SCHEDULER]);
 		SuspendThread(GetCurrentThread());
 	}
@@ -60,6 +62,8 @@ void sched_end_task_callback()
 
 		next_task->state = RUNNING;
 		running_tasks[core] = std::move(next_task);
+
+		semaphore_V(sched_lock, 1);
 
 		__asm
 		{
@@ -195,7 +199,6 @@ DWORD scheduler_run(void *ptr)
 		if (core_req_pause[core])
 		{
 			core_paused[core] = true;
-			sched_store_context(core);
 			task_queue.push_back(std::move(running_tasks[core]));
 			core_req_pause[core] = false;
 		}
@@ -343,8 +346,6 @@ std::string sched_get_running_tasks()
 {
 	std::stringstream ss;
 
-	semaphore_P(sched_lock, 1);
-
 	for (int i = 0; i < CORE_COUNT; i++)
 	{
 		if (sched_active_task(i))
@@ -356,16 +357,12 @@ std::string sched_get_running_tasks()
 		}
 	}
 
-	semaphore_V(sched_lock, 1);
-
 	return ss.str();
 }
 
 std::string sched_get_runnable_tasks()
 {
 	std::stringstream ss;
-
-	semaphore_P(sched_lock, 1);
 
 	for (size_t i = 0; i < task_queue.size(); i++)
 	{
@@ -374,16 +371,12 @@ std::string sched_get_runnable_tasks()
 		ss << task_type_names[task_queue[i]->type] << '\n';
 	}
 
-	semaphore_V(sched_lock, 1);
-
 	return ss.str();
 }
 
 std::string sched_get_cores_info()
 {
 	std::stringstream ss;
-
-	semaphore_P(sched_lock, 1);
 
 	for (int i = 0; i < CORE_COUNT; i++)
 	{
@@ -395,8 +388,6 @@ std::string sched_get_cores_info()
 			ss << "core " << i << " free" << '\n';
 		}
 	}
-
-	semaphore_V(sched_lock, 1);
 
 	return ss.str();
 }
