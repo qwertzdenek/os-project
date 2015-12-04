@@ -20,11 +20,17 @@ void core_do_reschedule(int core_number)
 	SuspendThread(core_handles[core_number]);
 	GetThreadContext(core_handles[core_number], &ctx);
 
-	ctx.Ecx = core_number;
-	ctx.Eip = (DWORD)cpu_int_table_routines[0][INT_RESCHEDULE];
-
 	semaphore_P(sched_lock, 1);
 
+	sched_store_context(core_number);
+
+	DWORD target_esp = (DWORD)cpu_int_table_messages[core_number][INT_RESCHEDULE];
+	cpu_int_table_messages[core_number][INT_RESCHEDULE] = 0;
+
+	ctx.Esp = target_esp;
+	ctx.Eip = (DWORD)cpu_int_table_routines[0][INT_RESCHEDULE];
+
+	semaphore_V(sched_lock, 1);
 	SetThreadContext(core_handles[core_number], &ctx);
 	while (ResumeThread(core_handles[core_number]))
 		;
