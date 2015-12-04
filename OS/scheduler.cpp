@@ -54,15 +54,16 @@ void sched_end_task_callback()
 		std::unique_ptr<task_control_block> next_task(std::move(task_queue.front()));
 		task_queue.pop_front();
 
-		cpu_int_table_messages[core][1] = (void *)next_task->context.Esp;
+		DWORD target_esp = (DWORD)next_task->context.Esp;
 
 		next_task->state = RUNNING;
 		running_tasks[core] = std::move(next_task);
+		semaphore_V(sched_lock, 1);
 
 		__asm
 		{
-			mov ecx, core
-			call do_reschedule
+			mov esp, target_esp
+			jmp do_reschedule
 		}
 	}
 }
