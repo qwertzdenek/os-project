@@ -12,6 +12,8 @@ const std::string task_type_names[] = { "RUNNER", "CONSUMENT", "PRODUCENT", "IDL
 void *task_entry_points[4] = { task_main_runner, task_main_consument,
 							   task_main_producent, task_main_idle };
 
+static semaphore_t generator_lock;
+
 DWORD task_main_idle(void *in)
 {
 	while (1)
@@ -32,6 +34,9 @@ DWORD task_main_runner(void *in)
 	ptr->mean = params->mean;
 	ptr->deviation = params->deviation;
 
+	ptr->mean_diff = INFINITY;
+	ptr->deviation_diff = INFINITY;
+
 	ptr->can_run = true;
 
 	int prod_id = exec_task(PRODUCENT, ptr);
@@ -51,7 +56,9 @@ DWORD task_main_producent(void *in)
 
 	int i = 0;
 	while (task->can_run) {
+		semaphore_P(generator_lock, 1);
 		double generatedNumber = distribution(generator);
+		semaphore_V(generator_lock, 1);
 
 		semaphore_P(task->empty, 1);
 

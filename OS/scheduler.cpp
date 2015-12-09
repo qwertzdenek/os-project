@@ -26,9 +26,11 @@ static std::list<std::unique_ptr<new_task_req>> new_task_queue;
 // exit task requests queue
 static std::deque<std::unique_ptr<task_control_block>> exit_task_queue;
 
+static semaphore_t sched_new_task_lock;
+static semaphore_t sched_stream_lock;
+
+// this is shared with the interrupt timer thread
 semaphore_t sched_lock;
-semaphore_t sched_new_task_lock;
-semaphore_t sched_stream_lock;
 
 static uint32_t task_counter = 0;
 static CONTEXT default_context;
@@ -93,7 +95,7 @@ void sched_store_context(int core)
 		esp_push(&ctx.Esp, ctx.Eip);
 
 		// store flags and general registers on stack here
-		esp_push(&ctx.Esp, ctx.ContextFlags);
+		esp_push(&ctx.Esp, ctx.EFlags);
 		// push dummy registers
 		esp_push(&ctx.Esp, ctx.Eax);
 		esp_push(&ctx.Esp, ctx.Ecx);
