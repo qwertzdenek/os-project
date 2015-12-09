@@ -28,6 +28,9 @@ struct task_common_pointers {
     std::atomic<bool> can_run;
     double mean;
     double deviation;
+
+	double mean_diff;
+	double deviation_diff;
 };
 
 struct task_run_parameters {

@@ -99,13 +99,16 @@ DWORD task_main_consument(void *in)
 		varianceBefore = variance;
 
 		mean = ((countConsumed * mean) + nr) / (countConsumed + 1);
-		variance = (countConsumed * (varianceBefore + pow(meanBefore, 2.0)) + pow(nr, 2.0)) / (countConsumed + 1) - pow(mean, 2.0);
+		variance = (countConsumed * (varianceBefore + meanBefore*meanBefore) + nr*nr) / (countConsumed + 1) - mean*mean;
 		deviation = sqrt(variance);
 
 		countConsumed++;
 
 		mean_diff = fabs(original_mean - mean);
 		deviation_diff = fabs(original_deviation - deviation);
+
+		task->mean_diff = mean_diff;
+		task->deviation_diff = deviation_diff;
 
 		if (mean_diff < PRECISION && deviation_diff < PRECISION) {
 			// stop producer

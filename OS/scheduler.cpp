@@ -358,6 +358,7 @@ std::string sched_get_running_tasks()
 {
 	std::stringstream ss;
 
+	semaphore_P(sched_lock, 1);
 	for (int i = 0; i < CORE_COUNT; i++)
 	{
 		if (sched_active_task(i))
@@ -368,6 +369,7 @@ std::string sched_get_running_tasks()
 			ss << task_type_names[running_tasks[i]->type] << '\n';
 		}
 	}
+	semaphore_V(sched_lock, 1);
 
 	return ss.str();
 }
@@ -376,12 +378,14 @@ std::string sched_get_runnable_tasks()
 {
 	std::stringstream ss;
 
+	semaphore_P(sched_lock, 1);
 	for (size_t i = 0; i < task_queue.size(); i++)
 	{
 		ss << task_queue[i]->task_id << ' ';
 		ss << task_state_names[task_queue[i]->state] << ' ';
 		ss << task_type_names[task_queue[i]->type] << '\n';
 	}
+	semaphore_V(sched_lock, 1);
 
 	return ss.str();
 }
@@ -390,6 +394,7 @@ std::string sched_get_cores_info()
 {
 	std::stringstream ss;
 
+	semaphore_P(sched_lock, 1);
 	for (int i = 0; i < CORE_COUNT; i++)
 	{
 		if (running_tasks[i] != NULL)
@@ -400,6 +405,39 @@ std::string sched_get_cores_info()
 			ss << "core " << i << " free" << '\n';
 		}
 	}
+	semaphore_V(sched_lock, 1);
+
+	return ss.str();
+}
+
+std::string sched_get_tasks_progress()
+{
+	std::stringstream ss;
+
+	semaphore_P(sched_lock, 1);
+
+	for (size_t i = 0; i < task_queue.size(); i++)
+	{
+		if (task_queue[i]->type == PRODUCENT || task_queue[i]->type == CONSUMENT)
+		{
+			ss << "planned task " << task_queue[i]->task_id << " difference |";
+			ss << " mean: " << reinterpret_cast<task_common_pointers*>(task_queue[i]->data.get())->mean_diff;
+			ss << " deviation: " << reinterpret_cast<task_common_pointers*>(task_queue[i]->data.get())->deviation_diff << '\n';
+		}
+	}
+
+	for (int i = 0; i < CORE_COUNT; i++)
+	{
+		if (running_tasks[i] != NULL &&
+			(running_tasks[i]->type == PRODUCENT || running_tasks[i]->type == CONSUMENT))
+		{
+			ss << "actual task " << running_tasks[i]->task_id << " difference |";
+			ss << " mean: " << reinterpret_cast<task_common_pointers*>(running_tasks[i]->data.get())->mean_diff;
+			ss << " deviation: " << reinterpret_cast<task_common_pointers*>(running_tasks[i]->data.get())->deviation_diff << '\n';
+		}
+	}
+
+	semaphore_V(sched_lock, 1);
 
 	return ss.str();
 }

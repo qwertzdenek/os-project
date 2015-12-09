@@ -20,5 +20,6 @@ bool sched_request_resume(int core);
 std::string sched_get_running_tasks();
 std::string sched_get_runnable_tasks();
 std::string sched_get_cores_info();
+std::string sched_get_tasks_progress();
 
 uint32_t shed_get_tid();

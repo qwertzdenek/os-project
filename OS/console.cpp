@@ -141,6 +141,10 @@ int main(int argc, char *argv[], char *envp[])
 				std::cout << "Wrong core number" << std::endl;
 			}
 		}
+		else if (input == "state")
+		{
+			std::cout << sched_get_tasks_progress() << std::endl;
+		}
 		else
 		{
 			std::cout << "Unknown command" << std::endl;
