@@ -10,7 +10,7 @@ const std::string task_type_names[] = { "RUNNER", "CONSUMENT", "PRODUCENT", "IDL
 void *task_entry_points[4] = { task_main_runner, task_main_consument,
 							   task_main_producent, task_main_idle };
 
-DWORD task_main_idle(void *)
+DWORD task_main_idle(void *in)
 {
 	while (1)
 		;

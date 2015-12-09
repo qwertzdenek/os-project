@@ -11,7 +11,7 @@
 #include "core.h"
 #include "interrupts.h"
 
-#define TIME_QUANTUM 200
+#define TIME_QUANTUM 400
 #define TIME_QUANTUM_DECREASE 50
 
 // actual assigned tasks
@@ -155,6 +155,18 @@ uint32_t shed_get_tid()
 	else return running_tasks[core]->task_id;
 }
 
+bool sched_task_running()
+{
+	bool result = false;
+
+	for (int core = 0; core < CORE_COUNT; core++)
+	{
+		result |= running_tasks[core] != NULL;
+	}
+
+	return result;
+}
+
 void sched_create_task(task_control_block &tcb, new_task_req &req)
 {
 	tcb.context = default_context;
@@ -251,7 +263,7 @@ DWORD scheduler_run(void *ptr)
 			current_task->quantum -= TIME_QUANTUM_DECREASE;
 			if (current_task->quantum < 0)
 			{
-				if (current_task->type == IDLE)
+				if (current_task->type == IDLE && !task_queue.empty() && sched_task_running())
 				{
 					current_task.reset();
 				}
@@ -267,6 +279,7 @@ DWORD scheduler_run(void *ptr)
 				target_contexts[core] = current_task->context;
 				running_tasks[core] = std::move(current_task);
 				context_changed[core] = false;
+				SetEvent(cpu_int_table_handlers[core][INT_CORE_RESUME]);
 				continue;
 			}
 		}

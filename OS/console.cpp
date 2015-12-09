@@ -64,8 +64,6 @@ int main(int argc, char *argv[], char *envp[])
 	// boot up
 	hardware_start();
 
-	Sleep(200);
-
 	while (running)
 	{
 		std::cin >> input;
