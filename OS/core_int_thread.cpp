@@ -75,6 +75,7 @@ DWORD WINAPI core_int_thread_entry(void *param)
 
 		switch (num) {
 		case INT_SCHEDULER:
+			cpu_int_table_masked[0][INT_SCHEDULER] = true;
 			core_do_schedule();
 			break;
 		case INT_RESCHEDULE:

@@ -1,19 +1,12 @@
 #pragma once
 
-#include <array>
 #include <memory>
-#include <cmath>
-#include <random>
-
 #include <string>
-#include <sstream>
-#include <fstream>
-#include <iostream>
 
 #include "buffer.h"
 #include "synchro.h"
 
-#define PRECISION 0.01
+#define PRECISION 0.0005
 
 #define TASK_STACK_SIZE 1024*1024
 

@@ -28,6 +28,7 @@ static std::deque<std::unique_ptr<task_control_block>> exit_task_queue;
 
 semaphore_t sched_lock;
 semaphore_t sched_new_task_lock;
+semaphore_t sched_stream_lock;
 
 static uint32_t task_counter = 0;
 static CONTEXT default_context;
@@ -40,8 +41,10 @@ void sched_end_task_callback()
 {
 	int core = actual_core();
 
+	semaphore_P(sched_stream_lock, 1);
 	std::cout << "task " << task_type_names[running_tasks[core]->type];
 	std::cout << " id " << running_tasks[core]->task_id << " exited" << std::endl;
+	semaphore_V(sched_stream_lock, 1);
 
 	semaphore_P(sched_lock, 1);
 	exit_task_queue.push_back(std::move(running_tasks[core]));
@@ -203,8 +206,6 @@ DWORD scheduler_run(void *ptr)
 	bool context_changed[CORE_COUNT];
 	memset(&context_changed, 0, CORE_COUNT * sizeof(bool));
 
-	cpu_int_table_masked[0][INT_SCHEDULER] = true;
-
 	// pause and resume requests
 	for (int core = 0; core < CORE_COUNT; core++)
 	{
@@ -334,8 +335,6 @@ DWORD scheduler_run(void *ptr)
 			SetEvent(cpu_int_table_handlers[core][INT_RESCHEDULE]);
 		}
 	}
-
-	cpu_int_table_masked[0][INT_SCHEDULER] = false;
 
 	return target_contexts[0].Esp;
 }

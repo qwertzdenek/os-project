@@ -29,6 +29,7 @@ __declspec(naked) void do_schedule()
 	}
 
 	semaphore_V(sched_lock, 1);
+	cpu_int_table_masked[0][INT_SCHEDULER] = false;
 
 	__asm
 	{

@@ -1,6 +1,8 @@
 #include "stdafx.h"
 #include "sched_calls.h"
 
+#include <random>
+
 #include "tasks.h"
 
 const std::string task_state_names[] = { "RUNNABLE", "BLOCKED", "RUNNING", "TERMINATED" };
@@ -40,19 +42,6 @@ DWORD task_main_runner(void *in)
 
 DWORD task_main_producent(void *in)
 {
-	SYSTEMTIME now;
-	GetSystemTime(&now);
-
-	int id = get_tid();
-
-	std::ostringstream oss;
-	oss << "Task_producer_" << id << "_" << now.wHour << now.wMinute << "-";
-	oss << now.wDay << now.wMonth << now.wYear << ".log";
-
-	std::string log_file_name = oss.str();
-	std::string log_file_path = std::string("logs/") + log_file_name;
-	std::ofstream log_file(log_file_path);
-
 	task_common_pointers *task = (task_common_pointers *)in;
 
 	std::random_device rd;
@@ -73,31 +62,13 @@ DWORD task_main_producent(void *in)
 		semaphore_V(task->mutex, 1);
 
 		semaphore_V(task->full, 1);
-
-		log_file << "Added: " << std::fixed << generatedNumber << std::endl;
-		log_file << "Buffer free space: " << (int)task->empty._value << std::endl;
 	}
-
-	log_file.close();
 
 	return 0;
 }
 
 DWORD task_main_consument(void *in)
 {
-	SYSTEMTIME now;
-	GetSystemTime(&now);
-
-	int id = get_tid();
-
-	std::ostringstream oss;
-	oss << "Task_consumer_" << id << "_" << now.wHour << now.wMinute << "-";
-	oss << now.wDay << now.wMonth << now.wYear << ".log";
-
-	std::string log_file_name = oss.str();
-	std::string log_file_path = std::string("logs/") + log_file_name;
-	std::ofstream log_file(log_file_path);
-
 	task_common_pointers *task = (task_common_pointers *)in;
 
 	double original_mean = task->mean;
@@ -113,8 +84,6 @@ DWORD task_main_consument(void *in)
 
 	int countConsumed = 0;
 
-	log_file << "Producent giving" << "\tmean: " << task->mean << "\tdeviation: " << task->deviation;
-
 	while (task->can_run) {
 		// remove one number from buffer if any
 		semaphore_P(task->full, 1);
@@ -124,8 +93,6 @@ DWORD task_main_consument(void *in)
 
 		semaphore_V(task->mutex, 1);
 		semaphore_V(task->empty, 1);
-
-		log_file << "Buffer contains " << (int)task->full._value << " numbers\n";
 
 		/* count needed values */
 		meanBefore = mean;
@@ -137,24 +104,14 @@ DWORD task_main_consument(void *in)
 
 		countConsumed++;
 
-		log_file << "Removed " << nr << std::endl;
-		log_file << "\tCounted mean " << mean << std::endl;
-		log_file << "\tCounted deviation: " << deviation << std::endl;
-
 		mean_diff = fabs(original_mean - mean);
 		deviation_diff = fabs(original_deviation - deviation);
 
 		if (mean_diff < PRECISION && deviation_diff < PRECISION) {
-			log_file << "Desired precision reached after " << countConsumed << " steps" << std::endl;
-			log_file << "\tDeviation difference: " << deviation_diff << std::endl;
-			log_file << "\tMean difference: " << mean_diff << std::endl;
-
 			// stop producer
 			task->can_run = false;
 		}
 	}
-
-	log_file.close();
 
 	return 0;
 }
