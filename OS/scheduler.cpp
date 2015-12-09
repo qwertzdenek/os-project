@@ -422,7 +422,7 @@ std::string sched_get_tasks_progress()
 		{
 			ss << "planned task " << task_queue[i]->task_id << " difference |";
 			ss << " mean: " << reinterpret_cast<task_common_pointers*>(task_queue[i]->data.get())->mean_diff;
-			ss << " deviation: " << reinterpret_cast<task_common_pointers*>(task_queue[i]->data.get())->deviation_diff << '\n';
+			ss << ", deviation: " << reinterpret_cast<task_common_pointers*>(task_queue[i]->data.get())->deviation_diff << '\n';
 		}
 	}
 
@@ -433,7 +433,7 @@ std::string sched_get_tasks_progress()
 		{
 			ss << "actual task " << running_tasks[i]->task_id << " difference |";
 			ss << " mean: " << reinterpret_cast<task_common_pointers*>(running_tasks[i]->data.get())->mean_diff;
-			ss << " deviation: " << reinterpret_cast<task_common_pointers*>(running_tasks[i]->data.get())->deviation_diff << '\n';
+			ss << ", deviation: " << reinterpret_cast<task_common_pointers*>(running_tasks[i]->data.get())->deviation_diff << '\n';
 		}
 	}
 

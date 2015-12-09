@@ -6,7 +6,7 @@
 #include "buffer.h"
 #include "synchro.h"
 
-#define PRECISION 0.0005
+#define PRECISION 0.0001
 
 #define TASK_STACK_SIZE 1024*1024
 
@@ -29,8 +29,8 @@ struct task_common_pointers {
     double mean;
     double deviation;
 
-	double mean_diff;
-	double deviation_diff;
+	std::atomic<double> mean_diff;
+	std::atomic<double> deviation_diff;
 };
 
 struct task_run_parameters {
