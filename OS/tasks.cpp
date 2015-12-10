@@ -117,22 +117,12 @@ DWORD task_main_consument(void *in)
 
 		task->mean_diff = mean_diff;
 		task->deviation_diff = deviation_diff;
+		task->processed = countConsumed;
 
 		if (mean_diff < PRECISION && deviation_diff < PRECISION)
 		{
 			// stop producer
 			task->can_run = false;
-		}
-		// something nasty happening
-		else if (mean_diff > 65536 || deviation_diff > 65536)
-		{
-			mean = 0;
-			meanBefore = 0;
-			variance = 0;
-			deviation = 0;
-			varianceBefore = 0;
-
-			countConsumed = 0;
 		}
 	}
 

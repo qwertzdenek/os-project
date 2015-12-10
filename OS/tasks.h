@@ -31,6 +31,7 @@ struct task_common_pointers {
 
 	std::atomic<double> mean_diff;
 	std::atomic<double> deviation_diff;
+	std::atomic<int> processed;
 };
 
 struct task_run_parameters {
