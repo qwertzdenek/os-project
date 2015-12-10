@@ -11,3 +11,5 @@
 #include <tchar.h>
 
 #include <Windows.h>
+
+extern HANDLE error_event;

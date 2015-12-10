@@ -8,6 +8,8 @@
 #include "cpu.h"
 #include "scheduler.h"
 
+HANDLE error_event;
+
 char *help()
 {
 	return
@@ -23,13 +25,58 @@ char *help()
 		"  start - start producent and consument\n"
 		"  help - show this message\n"
 		"  show - shows the scheduler status\n"
+		"  state - shows task computation progress\n"
 		"  pause-core - suspends core execution. You cannot stop thread number 0.\n"
 		"  resume-core - resumes core code execution\n\n";
+}
+
+void read_stream(int &out, std::string question)
+{
+	while (true)
+	{
+		std::cout << question << "> ";
+		std::cin >> out;
+
+		if (std::cin.fail())
+		{
+			std::cin.clear();
+			std::cin.ignore(256, '\n');
+		}
+		else
+		{
+			break;
+		}
+	}
+	std::cin.ignore(256, '\n'); // ignore rest
+}
+
+void read_stream(double &out, std::string question)
+{
+	while (true)
+	{
+		std::cout << question << "> ";
+		std::cin >> out;
+
+		if (std::cin.fail())
+		{
+			std::cin.clear();
+			std::cin.ignore(256, '\n');
+		}
+		else
+		{
+			break;
+		}
+	}
+	std::cin.ignore(256, '\n'); // ignore rest
 }
 
 int main(int argc, char *argv[], char *envp[])
 {
 	bool help_flag = false;
+	error_event = CreateEvent(NULL, TRUE, FALSE, NULL);
+
+	if (error_event == NULL)
+		return -1;
 
 	for (int i = 1; i < argc; i++)
 	{
@@ -64,7 +111,7 @@ int main(int argc, char *argv[], char *envp[])
 	// boot up
 	hardware_start();
 
-	while (running)
+	while (running && WaitForSingleObject(error_event, 0) != WAIT_OBJECT_0)
 	{
 		std::cin >> input;
 		std::transform(input.begin(), input.end(), input.begin(), ::tolower);
@@ -75,7 +122,13 @@ int main(int argc, char *argv[], char *envp[])
 		}
 		else if (input == "start")
 		{
-			exec_task(RUNNER, std::make_shared<task_run_parameters>(1, 2));
+			double mean;
+			double deviation;
+
+			read_stream(mean, "mean");
+			read_stream(deviation, "deviation");
+
+			exec_task(RUNNER, std::make_shared<task_run_parameters>(mean, deviation));
 		}
 		else if (input == "help")
 		{
@@ -92,8 +145,7 @@ int main(int argc, char *argv[], char *envp[])
 		}
 		else if (input == "pause-core")
 		{
-			std::cout << "> ";
-			std::cin >> core_number;
+			read_stream(core_number, "core");
 
 			// call interrupt
 			if (core_number >= 0 && core_number < CORE_COUNT)
@@ -121,8 +173,7 @@ int main(int argc, char *argv[], char *envp[])
 		}
 		else if (input == "resume-core")
 		{
-			std::cout << "> ";
-			std::cin >> core_number;
+			read_stream(core_number, "core");
 
 			// call interrupt
 			if (core_number >= 0 && core_number < CORE_COUNT)
@@ -152,6 +203,8 @@ int main(int argc, char *argv[], char *envp[])
 	}
 
 	power_button();
+
+	std::cout << "bye." << std::endl;
 
 	return 0;
 }

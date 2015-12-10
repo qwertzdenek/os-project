@@ -24,6 +24,12 @@ void init_cpu_core(int core_number)
 {
 	DWORD thread_id;
 	core_handles[core_number] = (HANDLE)CreateThread(NULL, 0, NULL, 0, CREATE_SUSPENDED, &thread_id);
+	if (core_handles[core_number] == NULL)
+	{
+		SetEvent(error_event);
+		return;
+	}
+
 	SetThreadAffinityMask(core_handles[core_number], 0x1 << core_number);
 
 	core_thread_id[core_number] = thread_id;

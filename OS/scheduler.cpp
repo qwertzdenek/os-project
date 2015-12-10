@@ -214,7 +214,8 @@ DWORD scheduler_run(void *ptr)
 		if (core_req_pause[core])
 		{
 			core_paused[core] = true;
-			task_queue.push_back(std::move(running_tasks[core]));
+			if (running_tasks[core] != NULL)
+				task_queue.push_back(std::move(running_tasks[core]));
 			core_req_pause[core] = false;
 		}
 
@@ -345,6 +346,11 @@ void init_scheduler()
 {
 	memset(&default_context, 0, sizeof(default_context));
 	HANDLE CPUCore = (HANDLE)CreateThread(NULL, 0, NULL, 0, CREATE_SUSPENDED, NULL);
+	if (CPUCore == NULL)
+	{
+		SetEvent(error_event);
+		return;
+	}
 
 	default_context.ContextFlags = CONTEXT_FULL;
 	GetThreadContext(CPUCore, &default_context);
@@ -420,7 +426,7 @@ std::string sched_get_tasks_progress()
 
 	for (size_t i = 0; i < task_queue.size(); i++)
 	{
-		if (task_queue[i]->type == PRODUCENT || task_queue[i]->type == CONSUMENT)
+		if (task_queue[i]->type == CONSUMENT)
 		{
 			ss << "planned task " << task_queue[i]->task_id << " difference |";
 			ss << " mean: " << reinterpret_cast<task_common_pointers*>(task_queue[i]->data.get())->mean_diff;
@@ -430,8 +436,7 @@ std::string sched_get_tasks_progress()
 
 	for (int i = 0; i < CORE_COUNT; i++)
 	{
-		if (running_tasks[i] != NULL &&
-			(running_tasks[i]->type == PRODUCENT || running_tasks[i]->type == CONSUMENT))
+		if (running_tasks[i] != NULL && running_tasks[i]->type == CONSUMENT)
 		{
 			ss << "actual task " << running_tasks[i]->task_id << " difference |";
 			ss << " mean: " << reinterpret_cast<task_common_pointers*>(running_tasks[i]->data.get())->mean_diff;

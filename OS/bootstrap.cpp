@@ -57,6 +57,11 @@ void cpu_init()
 		}
 
 		core_int_handles[core] = CreateThread(NULL, TASK_STACK_SIZE, core_int_thread_entry, (void *)core, 0, NULL);
+		if (core_int_handles[core] == NULL)
+		{
+			SetEvent(error_event);
+			break;
+		}
 		SetThreadAffinityMask(core_int_handles[core], 0x1 << core);
 	}
 }
@@ -98,6 +103,12 @@ void hardware_start()
 	power_button_event = CreateEvent(NULL, true, false, NULL);
 
 	hw_thread = (HANDLE) CreateThread(NULL, 256, hardware_entry, 0, 0, NULL);
+	if (hw_thread == NULL)
+	{
+		SetEvent(error_event);
+		return;
+	}
+
 	SetThreadPriority(hw_thread, THREAD_PRIORITY_HIGHEST);
 }
 
