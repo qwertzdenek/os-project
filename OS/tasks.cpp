@@ -36,6 +36,7 @@ DWORD task_main_runner(void *in)
 
 	ptr->mean_diff = INFINITY;
 	ptr->deviation_diff = INFINITY;
+	ptr->processed = 0;
 
 	ptr->can_run = true;
 

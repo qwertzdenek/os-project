@@ -22,4 +22,6 @@ std::string sched_get_runnable_tasks();
 std::string sched_get_cores_info();
 std::string sched_get_tasks_progress();
 
+void sched_stream_safe(std::string str);
+
 uint32_t shed_get_tid();

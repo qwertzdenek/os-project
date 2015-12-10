@@ -90,6 +90,9 @@ void sched_store_context(int core)
 		SuspendThread(core_handles[core]);
 		GetThreadContext(core_handles[core], &ctx);
 
+		if (ctx.Eip == NULL)
+			return;
+
 		// push return address on task stack
 		// set interrupt handler on the cpu core
 		esp_push(&ctx.Esp, ctx.Eip);
@@ -113,7 +116,7 @@ void sched_store_context(int core)
 
 bool sched_active_task(int core)
 {
-	return running_tasks[core] != NULL;
+	return !core_paused[core] && running_tasks[core] != NULL;
 }
 
 // returns new task id
@@ -164,10 +167,26 @@ bool sched_task_running()
 {
 	bool result = false;
 
+	semaphore_P(sched_lock, 1);
 	for (int core = 0; core < CORE_COUNT; core++)
 	{
 		result |= running_tasks[core] != NULL;
 	}
+	semaphore_V(sched_lock, 1);
+
+	return result;
+}
+
+bool sched_consument_running()
+{
+	bool result = false;
+
+	semaphore_P(sched_lock, 1);
+	for (int core = 0; core < CORE_COUNT; core++)
+	{
+		result |= running_tasks[core] != NULL && running_tasks[core]->type == CONSUMENT;
+	}
+	semaphore_V(sched_lock, 1);
 
 	return result;
 }
@@ -209,13 +228,15 @@ DWORD scheduler_run(void *ptr)
 	memset(&context_changed, 0, CORE_COUNT * sizeof(bool));
 
 	// pause and resume requests
-	for (int core = 0; core < CORE_COUNT; core++)
+	for (int core = 1; core < CORE_COUNT; core++)
 	{
 		if (core_req_pause[core])
 		{
-			core_paused[core] = true;
 			if (running_tasks[core] != NULL)
+			{
 				task_queue.push_back(std::move(running_tasks[core]));
+			}
+			core_paused[core] = true;
 			core_req_pause[core] = false;
 		}
 
@@ -405,7 +426,7 @@ std::string sched_get_cores_info()
 	semaphore_P(sched_lock, 1);
 	for (int i = 0; i < CORE_COUNT; i++)
 	{
-		if (running_tasks[i] != NULL)
+		if (sched_active_task(i))
 		{
 			ss << "core " << i << " occupied" << '\n';
 		}
@@ -422,13 +443,17 @@ std::string sched_get_tasks_progress()
 {
 	std::stringstream ss;
 
-	semaphore_P(sched_lock, 1);
+	if (task_queue.empty() && !sched_consument_running())
+	{
+		return ss.str();
+	}
 
+	semaphore_P(sched_lock, 1);
 	for (size_t i = 0; i < task_queue.size(); i++)
 	{
 		if (task_queue[i]->type == CONSUMENT)
 		{
-			ss << "planned task " << task_queue[i]->task_id << " difference |";
+			ss << "planned task " << task_queue[i]->task_id << " error ->";
 			ss << " mean: " << reinterpret_cast<task_common_pointers*>(task_queue[i]->data.get())->mean_diff;
 			ss << ", deviation: " << reinterpret_cast<task_common_pointers*>(task_queue[i]->data.get())->deviation_diff;
 			ss << " | processed: " << reinterpret_cast<task_common_pointers*>(task_queue[i]->data.get())->processed << '\n';
@@ -437,9 +462,9 @@ std::string sched_get_tasks_progress()
 
 	for (int i = 0; i < CORE_COUNT; i++)
 	{
-		if (running_tasks[i] != NULL && running_tasks[i]->type == CONSUMENT)
+		if (sched_active_task(i) && running_tasks[i]->type == CONSUMENT)
 		{
-			ss << "actual task " << running_tasks[i]->task_id << " difference |";
+			ss << "actual task " << running_tasks[i]->task_id << " error ->";
 			ss << " mean: " << reinterpret_cast<task_common_pointers*>(running_tasks[i]->data.get())->mean_diff;
 			ss << ", deviation: " << reinterpret_cast<task_common_pointers*>(running_tasks[i]->data.get())->deviation_diff;
 			ss << " | processed: " << reinterpret_cast<task_common_pointers*>(running_tasks[i]->data.get())->processed << '\n';
@@ -449,4 +474,14 @@ std::string sched_get_tasks_progress()
 	semaphore_V(sched_lock, 1);
 
 	return ss.str();
+}
+
+void sched_stream_safe(std::string str)
+{
+	if (str.length() == 0)
+		return;
+
+	semaphore_P(sched_stream_lock, 1);
+	std::cout << str << std::endl;
+	semaphore_V(sched_stream_lock, 1);
 }

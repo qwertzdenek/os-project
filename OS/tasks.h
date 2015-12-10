@@ -6,7 +6,7 @@
 #include "buffer.h"
 #include "synchro.h"
 
-#define PRECISION 0.0001
+#define PRECISION 0.0006
 
 #define TASK_STACK_SIZE 1024*1024
 

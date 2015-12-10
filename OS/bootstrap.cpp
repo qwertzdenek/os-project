@@ -92,6 +92,8 @@ DWORD __stdcall hardware_entry(void *)
 	while (WaitForSingleObject(power_button_event, 400) != WAIT_OBJECT_0)
 	{
 		SetEvent(cpu_int_table_handlers[0][INT_SCHEDULER]);
+
+		sched_stream_safe(sched_get_tasks_progress());
 	}
 
 	cpu_stop();

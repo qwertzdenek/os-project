@@ -2,6 +2,7 @@
 
 #include <iostream>
 #include <string>
+#include <sstream>
 
 #include "bootstrap.h"
 #include "sched_calls.h"
@@ -136,12 +137,17 @@ int main(int argc, char *argv[], char *envp[])
 		}
 		else if (input == "show")
 		{
-			std::cout << "-> Runnable tasks:" << std::endl;
-			std::cout << sched_get_runnable_tasks() << std::endl;
-			std::cout << "-> Running tasks:" << std::endl;
-			std::cout << sched_get_running_tasks() << std::endl;
-			std::cout << "-> Cores:" << std::endl;
-			std::cout << sched_get_cores_info() << std::endl;
+			std::stringstream ss;
+
+			ss << "-> Runnable tasks:\n";
+			ss << sched_get_runnable_tasks() << '\n';
+			ss << "-> Running tasks:\n";
+			ss << sched_get_running_tasks() << '\n';
+			ss << "-> Cores:\n";
+			ss << sched_get_cores_info() << std::endl;
+
+			sched_stream_safe(ss.str());
+			ss.clear();
 		}
 		else if (input == "pause-core")
 		{
@@ -194,7 +200,7 @@ int main(int argc, char *argv[], char *envp[])
 		}
 		else if (input == "state")
 		{
-			std::cout << sched_get_tasks_progress() << std::endl;
+			sched_stream_safe(sched_get_tasks_progress());
 		}
 		else
 		{
