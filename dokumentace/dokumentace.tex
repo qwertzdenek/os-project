@@ -159,15 +159,17 @@ Průběžně se bude ukazovat konvergence vypočítaných parametrů k~zadaným,
 
 Bude vytvořeno rozhraní, kterým bude možné pozastavovat jednotlivé thready, a celkově program ovládat. Ukazujte využití jednotlivých procesorů.
 
-Tato aplikace z~povahy zadání bude cílena jen na architekturu \emph{Intel x86}.
+Tato aplikace bude z~povahy zadání cílena jen na architekturu \emph{Intel x86}.
 
 \section{Návrh}
-Prvním krokem je běžící procesor. Každé jádro je jedno běžící vlákno, na němž se provádí instrukce = úlohy. Plánovač je také úloha, proto by měl být pomocí přerušení plánován na procesor. Jelikož máme použít metodu RoundRobin, stačilo pouze přerušení po časovém limitu. Pro udržení procesoru v~běhu jsme zvolili jeden idle task.
+Prvním krokem je běžící procesor. Každé jádro je jedno běžící vlákno, na němž se provádí instrukce = úlohy. Plánovač je také úloha, proto by měl být pomocí přerušení plánován na procesor. Jelikož máme použít metodu Round Robin, stačilo pouze přerušení po časovém limitu. Pro udržení procesoru v~běhu jsme zvolili jeden idle task.
 
-Plánem bylo izolovat úlohy od procesoru i plánovače - na instrukcích dané úlohy nezáleží a musí běžet a plánovat se plně nezávisle. Úloha producenta a konzumenta ale přesto musí být spolu v~kontaktu. Následně musí být jednoduché jejich spuštění a zastavování z~konzole.
+Plánem bylo izolovat úlohy od procesoru i plánovače - na instrukcích dané úlohy nezáleží a musí běžet a plánovat se plně nezávisle. Úloha producenta a konzumenta ale přesto musí být spolu v~kontaktu. 
 Z~toho důvodu jsme se vydali směrem společné procedury pro vytvoření úloh. Prvních osm běžících úloh bude vytvořeno ihned po startu celého systému a naplánováno pro běh.
 
-Konzole bude jakési středisko tohoto systému, které bude monitorovat stav procesoru, resp. jader a následně poskytne možnost ovládat plánovač. Postupem spouštění by to měl být jakýsi jednoduchý počítač. O~vypisování statistik týkajících se běžících úloh se starají následně úlohy samotné.
+Konzole bude monitorovat stav procesoru, resp. jader a následně poskytne možnost ovládat plánovač.
+
+\section{Implementace}
 
 \subsection{Virtuální SMP}
 Spouštění procesoru probíhá obdobně jako u~reálného procesoru. Vstupem je procedura
@@ -214,7 +216,7 @@ Z~těch co běží na jádře jsme si vystačili s~obsluhou plánovače a přepl
 
 Přerušení plánovače \verb+INT_SCHEDULER+ nejdříve získá vnitřní zámek plánovače aby
 nedocházelo k~souběhu s~některým systémovým voláním. Pak pozastaví všechna jádra a uloží jejich kontext. Jádru je tím předložena instrukce obsluhy, která použije svůj zásobník plánovače.
-Plánovač pak vrazí přes registr EAX adresu následujícího zásobníku. Ten je načten běžnou cestou.
+Plánovač pak vrátí přes registr EAX adresu následujícího zásobníku. Ten je načten běžnou cestou.
 Návrat do přerušené úlohy je přes instrukci RET. Na prvním procesoru vždy něco běží.
 
 Díky tomu je možné přeskládat úlohy s~jejich aktuálním stavem. Kontext na zásobníku
@@ -226,13 +228,13 @@ plánovače aby mohlo uložit celý kontext aktuálně běžícího vlákna. Z~m
 cílový ESP, který vloží do kontextu jádra. Stejně tak jako v~předchozím případě. Vloží
 do EIP adresu obsluhy přeplánování. Cílové jádro je probuzeno.
 
-Obsluha přerušení je napsána v~Assembleru, aby byl zaručen minimální overhead. Využívám tak
-instrukce \texttt{popad} pro načtení obecných registrů a tak  \texttt{popfd} pro načtení vlajek.
+Obsluha přerušení je napsána v~Assembleru, abych nepoškodil kontext přerušené úlohy. Využívám tak
+instrukce \texttt{popad} pro načtení obecných registrů a  \texttt{popfd} pro načtení vlajek.
 
 \subsection{Plánovač}
-V~těle plánovače dojde nejdříve k~ověření zda nebylo pozastaveno nějaké jádro. To je
+V~těle plánovače dojde nejdříve k~ověření, zda nebylo pozastaveno nějaké jádro. To je
 způsobeno zavoláním voláním plánovače \verb+sched_request_resume+ a \verb+sched_request_pause+.
-Jakmile něco běží na pozastaveném procesoru, musí se to ukončit a uložit kontext.
+Jakmile něco běží na pozastaveném procesoru, musí se to pozastavit a uložit kontext.
 Tato úloha pak putuje na konec fronty úloh.
 
 Dále se mažou všechny úlohy které ukončily své tělo. Struktura TCB obsahuje destruktor,
@@ -280,9 +282,8 @@ přeplánováno při návratu z~plánovače.
 \subsection{Životní cyklus úlohy}
 Nyní popíšeme životní cyklus aplikace od jejího vzniku, stavy běhu a nakonec její
 ukončení. Naše schéma je na obrázku \ref{fig:state_diagram}. Z~běžného schématu
-vypadl stav blokovaný, protože používáme aktivní čekání. Navíc není k~dispozici
-přerušení na úrovni instrukcí, ale pouze signalizace. Jádro by se muselo ručně zastavovat a
-to by mělo za následek neočekávané chování.
+vypadl stav blokovaný, protože používáme aktivní čekání a není k~dispozici
+přerušení na úrovni instrukcí, ale pouze signalizace.
 
 \begin{figure}
 \centering
@@ -324,9 +325,13 @@ struct task_common_pointers {
 
 	circular_buffer buffer;
 
-	volatile bool can_run;
+	std::atomic<bool> can_run;
 	double mean;
 	double deviation;
+
+	std::atomic<double> mean_diff;
+	std::atomic<double> deviation_diff;
+	std::atomic<int> processed;
 };
 \end{lstlisting}
 
@@ -345,13 +350,8 @@ semafor. Knihovní funkce totiž nefungují. Z~pohledu systému máme pouze 4 vl
 procesoru, ale ve skutečnosti synchronizujeme mezi neexistujícími úlohami.
 
 Definovali jsme tedy strukturu \texttt{semaphore\_t}, která uchovává aktuální hodnotu
-semaforu. Vzhledem k~tomu že jde o~celočíselnou hodnotu, je přiřazení atomické (pokud je
-zaručeno zarovnání). Pro jistotu jsem ještě přidal prefix volatile.
-
-Zkoušel jsem použít C++11 atomic volání, ale to jsem opustil, protože docházelo
-k~nevysvětlitelnému chování \verb+__RTC_CheckEsp+, které je vkládáno. Tělo takového
-zámku je v~následujícím výpisu. Nechávám zde pro snažší pochopení Assemblerové
-implementace.
+semaforu. Tělo takového zámku je v~následujícím výpisu. Nechávám zde pro snažší
+pochopení Assemblerové implementace.
 
 \begin{lstlisting}
 int semaphore_P(semaphore_t &s, int value)
@@ -379,16 +379,16 @@ Kód semaforu byl použit následující (\texttt{synchro.cpp}):
 
 \begin{lstlisting}
 spin:
-	mov edx,
-s~mov edx, [edx]s._value
+	mov edx, s
+	mov edx, [edx]s._value
 	mov ebx, edx
 	sub ebx, value
 	js spin
 
 	mov eax, edx
-	; eax - old, actual [s], ebx - expected
-	mov ecx,
-s~lock cmpxchg[ecx]s._value, ebx
+	; eax - old, [ecx]s - actual, ebx - expected
+	mov ecx, s
+	lock cmpxchg[ecx]s._value, ebx
 	jnz spin
 	mov result, ebx
 \end{lstlisting}
@@ -424,12 +424,12 @@ Příklad je na obrázku \ref{fig:screen}.
 \item start: spustí úlohu
 \item help: ukáže nápovědu
 \item show: ukáže informace o~běžících procesech,čekajících procesech a obsazenosti CPU
+\item state: zobrazí aktuální chybu výpočtu v~úlohách. Tato funkce je volána pravidelně.
 \item pause-core: pozastaví jádro procesoru
 \item resume-core: znovu spustí jádro procesoru
 \end{itemize}
 
 \section{Referenční úlohy}
-
 Pro otestování funkčnosti celého systému byl podle zadání vytvořen vzor úlohy producent - konzument tak, že producent vytváří
 náhodná čísla z~normálního (Gaussovského) rozdělení. Konzument tato čísla zpracovává a počítá inkrementálně zpětně parametry rozdělení, což je střední hodnota a rozptyl.
 
@@ -465,5 +465,4 @@ sledovat kdo je kým blokovaný a dávat je tedy k~sobě například prioritou.
 
 Tato práce byla velmi poučná, ale také časově náročná.
 
-\end{document} 
-
+\end{document}

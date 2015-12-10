@@ -25,9 +25,9 @@ struct task_common_pointers {
 
 	circular_buffer buffer;
 
-    std::atomic<bool> can_run;
-    double mean;
-    double deviation;
+	std::atomic<bool> can_run;
+	double mean;
+	double deviation;
 
 	std::atomic<double> mean_diff;
 	std::atomic<double> deviation_diff;
