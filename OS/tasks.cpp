@@ -127,5 +127,7 @@ DWORD task_main_consument(void *in)
 		}
 	}
 
+	task->can_run = false;
+
 	return 0;
 }
