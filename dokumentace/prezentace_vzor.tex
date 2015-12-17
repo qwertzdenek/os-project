@@ -29,6 +29,7 @@ Vytvořte simulátor čtyřjádrového SMP a k němu:
 \item plánovač
 \item synchronizaci procesů (semafory)
 \item úlohu producent-konzument (poběží v osmi instancích)
+\item rozhraní pro řízení procesoru a spuštěných úloh
 \end{itemize}
 
 \end{frame}
@@ -38,14 +39,29 @@ Vytvořte simulátor čtyřjádrového SMP a k němu:
 \frametitle{Návrh implementace}
 
 \begin{itemize}
-\item AHoj!!
+\item start podobný jako start systému
+\item inicializace systému obsluh přerušení
+\item běh procesoru - jedna INIT úloha
+\item inicializace úloh producent-konzument do plánovače
+\item plánování na základě přerušení a časového kvanta (Round Robin)
 \end{itemize}
-
 
 \end{frame}
 
 \begin{frame} 
 \frametitle{Rozhraní}
+
+Konzole jako ovládací a monitorovací rozhraní:
+
+\begin{itemize}
+\item exit: vypne program
+\item start: spustí úlohu
+\item help: ukáže nápovědu
+\item show: ukáže informace o~běžících procesech,čekajících procesech a obsazenosti CPU
+\item state: zobrazí aktuální chybu výpočtu v~úlohách. Tato funkce je volána pravidelně.
+\item pause-core: pozastaví jádro procesoru
+\item resume-core: znovu spustí jádro procesoru
+\end{itemize}
 
 \end{frame}
 
@@ -66,7 +82,9 @@ Vytvořte simulátor čtyřjádrového SMP a k němu:
 
 \begin{frame} %[fragile]
 \frametitle{Úlohy}
-
+\begin{itemize}
+\item Dodělám zítra ráno
+\end{itemize}
 \end{frame}
 
 \begin{frame} 
