@@ -34,21 +34,6 @@ Vytvořte simulátor čtyřjádrového SMP a k němu:
 
 \end{frame}
 
-
-\begin{frame} 
-\frametitle{Návrh implementace}
-
-\begin{itemize}
-\item start podobný jako start systému
-\item inicializace systému obsluh přerušení
-\item běh procesoru - jedna INIT úloha
-\item inicializace úloh producent-konzument do plánovače
-\item plánování na základě přerušení a časového kvanta (Round Robin)
-\end{itemize}
-
-
-\end{frame}
-
 \begin{frame} 
 \frametitle{Rozhraní}
 
@@ -77,12 +62,13 @@ Konzole jako ovládací a monitorovací rozhraní:
 \begin{itemize}
 \item hardwarové hodiny plánovače
 \begin{itemize}
-  \item SMP init - vytvoří interrupt thread, pracovní vlákno
-  \item SMP terminate
+  \item inicializace systému obsluh přerušení
+  \item interrupt thread, pracovní vlákno
   \item spustí pravidelné přerušení plánovačem
+  \item po signálu ukončení z terminálu zajistí ukončení SMP
 \end{itemize}
-\item plánovač
 
+\item plánovač
 \begin{itemize}
   \item vytvoří si vlastní zásobník
   \item default\_context
@@ -164,13 +150,14 @@ Pro uchování pointerů jsme využili \texttt{std::unique\_ptr}.
 
 \begin{frame} %[fragile]
 \frametitle{Úlohy}
-\begin{itemize}
-\item Dodělám zítra ráno
-\end{itemize}
+\includegraphics[width=\textwidth]{obrazky/task_cycle.eps}
+
+Lorem ipsum dolor sit amet..
 \end{frame}
 
 \begin{frame} 
 \frametitle{Výsledky a závěr}
+
 
 \end{frame}
 
