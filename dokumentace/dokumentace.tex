@@ -205,7 +205,7 @@ svůj kód. Více o~plánovači v~další části.
 
 Vypnutí procesoru zajistí procedura \verb+power_button+. Ve skutečnosti vznik\-ne event,
 na který obslužné vlákno hardwarového přerušení zareaguje a rozešle sadu přerušení pro
-ukončení všech jader. Jakmile je procesor ukončen, provede ukončení všech otevřených
+ukončení všech jader. Po ukončení procesoru, provede se také ukončení všech otevřených
 handlerů přerušení.
 
 \subsection{Obsluha přerušení}
@@ -314,8 +314,9 @@ je již zmíněné \verb+exec_task()+ a také \verb+get_tid()+. Tato volání js
 mapována na volání plánovače. To je z~důvodu odstínění úloh od plánovače. Tyto
 volání jsou přesto volána synchronně a jsou co nejkratší.
 
-Jednotlivé úlohy získávají parametry ze struktur libovolného obsahu. Jmenovitě
-jsou to struktury:
+Jednotlivé úlohy získávají parametry z předem známých struktur.
+
+\newpage
 
 \begin{lstlisting}
 struct task_common_pointers {
@@ -335,7 +336,8 @@ struct task_common_pointers {
 };
 \end{lstlisting}
 
-Ta slouží pro nastavení úloh PRODUCENT a CONSUMENT. Pro spuštění RUNNER je třeba naplnit:
+Tato struktura slouží pro nastavení úloh PRODUCENT a CONSUMENT. Pro spuštění
+RUNNER je třeba naplnit:
 
 \begin{lstlisting}
 struct task_run_parameters {
@@ -448,7 +450,7 @@ Při vypracování této úlohy jsme narazili na mnoho problémů, které je tř
 řešit a prozkoumali jsme základní úlohu operačního systému a to sdílení réalného času.
 Využili jsme jak vysokoúrovňového C++, tak Assembleru. Zaměřili jsme se na starší
 archetekturu Intel x86, protože nevyužívá velké množství registrů než 64 bitová
-následovník. Z~tohoto důvodu zmizely zásadní instrukce \texttt{popad} a \texttt{popfd},
+následovník. Z~tohoto důvodu nejspíše zmizeli zásadní instrukce \texttt{popad} a \texttt{popfd},
 které přečtou zásobník a přepíší registry. Na reálném procesoru je obsluha přerušení řešena
 hardwarově a proto je možné obsluhovat s~takovou rychlostí.
 
