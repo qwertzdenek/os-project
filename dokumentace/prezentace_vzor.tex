@@ -26,10 +26,10 @@
 Vytvořte simulátor čtyřjádrového SMP a k němu:
 
 \begin{itemize}
-\item plánovač
-\item synchronizaci procesů (semafory)
-\item úlohu producent-konzument (poběží v osmi instancích)
-\item rozhraní pro řízení procesoru a spuštěných úloh
+\item Plánovač,
+\item synchronizaci procesů (semafory),
+\item úlohu producent-konzument (poběží v osmi instancích),
+\item rozhraní pro řízení procesoru a spuštěných úloh.
 \end{itemize}
 
 \end{frame}
@@ -60,15 +60,15 @@ Konzole jako ovládací a monitorovací rozhraní:
 \frametitle{SMP bootstrap}
 
 \begin{itemize}
-\item hardwarové hodiny plánovače
+\item Hardwarové hodiny plánovače:
 \begin{itemize}
-  \item inicializace systému obsluh přerušení
-  \item interrupt thread, pracovní vlákno
-  \item spustí pravidelné přerušení plánovačem
-  \item po signálu ukončení z terminálu zajistí ukončení SMP
+  \item Inicializace systému obsluh přerušení,
+  \item interrupt thread, pracovní vlákno,
+  \item spustí pravidelné přerušení plánovačem,
+  \item po signálu ukončení z terminálu zajistí ukončení SMP.
 \end{itemize}
 
-\item plánovač
+\item Plánovač:
 \begin{itemize}
   \item vytvoří si vlastní zásobník
   \item default\_context
@@ -83,7 +83,7 @@ Konzole jako ovládací a monitorovací rozhraní:
   \begin{column}{0.5\textwidth}
 \begin{block}{Součásti}
 \begin{itemize}
-  \item Event handler
+  \item event handler
   \item maska
   \item message DWORD
   \item obslužná rutina
@@ -111,9 +111,9 @@ Konzole jako ovládací a monitorovací rozhraní:
 
 Přepnutí probíhá odlišně z interrupt thread a při \emph{in place} přerušení.
 \begin{itemize}
-\item cílové ESP (buď rovnou změnou kontextu a nebo jako návratová hodnota plánovače)
-\item a skok na EIP obsluhy
-\item kontext je obnoven pomocí pop ze zásobníku
+\item Cílové ESP (buď rovnou změnou kontextu a nebo jako návratová hodnota plánovače),
+\item a skok na EIP obsluhy,
+\item kontext je obnoven pomocí pop ze zásobníku.
 \end{itemize}
 
 \begin{verbatim}
@@ -133,15 +133,15 @@ do_reschedule:
 
 Stará se o:
 \begin{itemize}
-  \item vytvoření TCB pro nové úlohy
-  \item smazání starých úloh
-  \item ošetřit pozastavení (úloha jde do fronty) a obnovení jádra
-  \item pro každý procesor
+  \item Vytvoření TCB pro nové úlohy,
+  \item smazání starých úloh,
+  \item ošetřit pozastavení (úloha jde do fronty) a obnovení jádra.
+  \item Pro každý procesor:
   \begin{itemize}
-    \item sníží časové kvantum běžící úlohy
-    \item \texttt{task\_queue}
-    \item idle task na prvním jádře (spuštění v případě prázdné fronty)
-    \item přepnutí úloh na všech procesorech
+    \item Sníží časové kvantum běžící úlohy,
+    \item \texttt{task\_queue},
+    \item idle task na prvním jádře (spuštění v případě prázdné fronty),
+    \item přepnutí úloh na všech procesorech.
   \end{itemize}
 
 \end{itemize}
@@ -149,14 +149,32 @@ Pro uchování pointerů jsme využili \texttt{std::unique\_ptr}.
 \end{frame}
 
 \begin{frame} %[fragile]
-\frametitle{Úlohy}
-\includegraphics[width=\textwidth]{obrazky/task_cycle.eps}
+%\frametitle{Úlohy}
+%\end{frame}
 
-Lorem ipsum dolor sit amet..
+%\begin{frame} %[fragile]
+\frametitle{Referenční úlohy producent - konzument}
+
+\includegraphics[width=0.95\textwidth]{obrazky/task_cycle.eps}
+  
+  \begin{itemize}
+    \item Producent generuje náhodná čísla z~normálního rozdělení,
+    \item konzument počítá střední hodnotu a rozptyl,
+    %\item synchronizace semafory,
+    \item společný start a sdílené parametry.
+  \end{itemize}
+
 \end{frame}
 
 \begin{frame} 
 \frametitle{Výsledky a závěr}
+
+  \begin{itemize}
+    \item Problémy se zásobníky a překladačem,
+    \item nutnost použití Assembleru,
+    \item neefektivní přepínání úloh,
+    \item vysoká rychlost běhu.
+  \end{itemize}
 
 
 \end{frame}
